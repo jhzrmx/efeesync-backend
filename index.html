@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" type="text/css" href="styles.css">
+	<title>Simple API Tester</title>
+</head>
+<body>
+	<form id="my-form">
+		<aside>
+			<select id="api-method">
+				<option value="GET">GET</option>
+				<option value="POST" selected>POST</option>
+				<option value="PUT">PUT</option>
+				<option value="PATCH">PATCH</option>
+				<option value="DELETE">DELETE</option>
+			</select>
+			<input type="text" id="api-url" placeholder="API URL" value="/api/login">
+		</aside>
+		<hr>
+		
+		
+		<div id="form-inputs">
+			<h2>Add Program</h2>
+			<input type="text" name="email" placeholder="Email" value="admin@cbsua.edu.ph" required><br/>
+			<input type="password" name="password" placeholder="Password"><br/>
+			
+			<!--input type="text" name="program-code" placeholder="Code"><br/>
+			<input type="text" name="program-name" placeholder="Name"><br/>
+			<input type="text" name="department-code" placeholder="DEPT CODE"><br/-->
+		</div>
+		
+		
+		<input type="submit" value="Send Request">
+	</form>
+	<div id="progress" hidden>Processing...</div>
+	<pre id="api-response" hidden></pre>
+
+	<script>
+		const myForm = document.getElementById("my-form");
+		const progress = document.getElementById("progress");
+		const apiMethodId = document.getElementById("api-method");
+		const apiResponse = document.getElementById("api-response");
+		const formInputs = document.getElementById("form-inputs");
+
+		apiMethodId.addEventListener("change", () => {
+			const isGet = apiMethodId.value === "GET";
+			formInputs.hidden = isGet;
+			apiResponse.hidden = true;
+		});
+
+		myForm.addEventListener("submit", async (e) => {
+			e.preventDefault();
+			progress.hidden = false;
+			apiResponse.hidden = true;
+
+			const method = apiMethodId.value;
+			const url = document.getElementById("api-url").value;
+
+			let options = { method, credentials: 'include' };
+
+			if (method !== "GET") {
+				const formData = new FormData(e.target);
+				const data = {};
+				for (const [key, value] of formData.entries()) {
+					if (data[key]) {
+						if (Array.isArray(data[key])) {
+							data[key].push(value);
+						} else {
+							data[key] = [data[key], value];
+						}
+					} else {
+						data[key] = value;
+					}
+				}
+				options.headers = {
+					"Content-Type": "application/json"
+				};
+				options.body = JSON.stringify(data);
+			}
+
+			try {
+				const response = await fetch(url, options);
+				const text = await response.text();
+				let parsed;
+
+				try {
+					parsed = JSON.parse(text);
+				} catch {
+					parsed = text;
+				}
+
+				apiResponse.innerHTML = `<h3>API Response: ${response.status}</h3><pre>${typeof parsed === 'object' ? JSON.stringify(parsed, null, 2) : parsed}</pre>`;
+			} catch (error) {
+				apiResponse.innerHTML = `<h3>An unexpected error occurred:</h3><pre>${error}</pre>`;
+			}
+
+			progress.hidden = true;
+			apiResponse.hidden = false;
+		});
+	</script>
+</body>
+</html>

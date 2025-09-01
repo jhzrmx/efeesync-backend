@@ -1,0 +1,103 @@
+*, *::before, *::after {
+	box-sizing: border-box;
+}
+:root {
+	--bg-color: #121212;
+	--surface-color: #1e1e1e;
+	--text-color: #e0e0e0;
+	--accent-color: #4fc3f7;
+	--error-color: #ff5252;
+	--border-radius: 8px;
+	--font: 'Segoe UI', sans-serif;
+}
+body {
+	margin: 0;
+	padding: 1rem;
+	background-color: var(--bg-color);
+	color: var(--text-color);
+	font-family: var(--font);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-height: 100vh;
+}
+aside {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	max-width: 450px;
+}
+aside select,
+aside input[type="text"] {
+	flex: 1;
+	max-width: unset;
+}
+aside select {
+	flex: 0 0 100px;
+}
+select, input[type="text"], input[type="password"], input[type="submit"] {
+	background-color: var(--surface-color);
+	color: var(--text-color);
+	border: 1px solid #333;
+	border-radius: var(--border-radius);
+	padding: 0.6rem 1rem;
+	margin: 0.5rem 0;
+	width: 100%;
+	max-width: 400px;
+	box-sizing: border-box;
+}
+select:focus, input:focus {
+	outline: none;
+	border-color: var(--accent-color);
+	box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.2);
+}
+input[type="submit"] {
+	background-color: var(--accent-color);
+	border: none;
+	cursor: pointer;
+	font-weight: bold;
+	transition: background 0.3s;
+}
+input[type="submit"]:hover {
+	background-color: #29b6f6;
+}
+form {
+	background-color: #222;
+	padding: 2rem;
+	border-radius: var(--border-radius);
+	box-shadow: 0 0 10px rgba(0,0,0,0.5);
+	width: 100%;
+	max-width: 450px;
+}
+h2, h3 {
+	text-align: center;
+	color: var(--accent-color);
+	margin-bottom: 1rem;
+}
+#progress {
+	margin-top: 1rem;
+	font-style: italic;
+	color: var(--accent-color);
+}
+#api-response {
+	margin-top: 2rem;
+	background-color: #222;
+	padding: 1rem;
+	border-radius: var(--border-radius);
+	max-width: 450px;
+	width: 100%;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	border: 1px solid #333;
+}
+#api-method, #api-url {
+	max-width: 450px;
+	margin-bottom: 1rem;
+}
+@media (max-width: 500px) {
+	body {
+		padding: 1rem;
+	}
+}

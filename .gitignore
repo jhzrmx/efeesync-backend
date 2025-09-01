@@ -1,0 +1,44 @@
+# Dependency management
+/vendor/
+composer.lock
+composer.phar
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Log files
+/storage/logs/*.log
+/var/log/
+
+# Cache directories
+/storage/framework/cache/
+/storage/framework/views/
+/bootstrap/cache/
+/cache/
+
+# Session files
+/storage/framework/sessions/
+
+# Uploads/User-generated content
+/public/uploads/
+/storage/app/public/
+
+# IDE and OS specific files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# Build artifacts and temporary files
+/public/build/
+/node_modules/
+*.bak
+*.tmp
+*.log
+
+# Uploaded user files
+# /api/src/uploads/*

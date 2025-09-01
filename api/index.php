@@ -1,0 +1,91 @@
+<?php
+date_default_timezone_set('Asia/Manila');
+
+// IMPORT NECESSARY LIBRARIES
+require "libs/Router.php";
+require "libs/EnvLoader.php";
+
+// HEADER CONFUSE
+header("X-Powered-By: Why are you here?");
+
+// LOAD ENVIRONMENT VARIABLES
+EnvLoader::loadFromFile("../.env");
+
+if (!$_ENV["EFEESYNC_IS_PRODUCTION"]) {
+	// DEVELOPMENT MODE
+	header("Access-Control-Allow-Origin: " . $_ENV["EFEESYNC_DEV_FRONTEND_URL"]);
+	header("Access-Control-Allow-Credentials: true");
+}
+
+// APPEND /api
+Route::enableBasePath();
+
+// ROUTES: BASIC AUTH
+Route::post("/login", "src/login.php");
+Route::get("/verify-login", "src/verify-login.php");
+Route::post("/logout", "src/logout.php");
+
+// ROUTES: USER
+Route::get("/users/current", "src/get-current-user.php");
+
+// ROUTES: DEPARTMENTS
+Route::get("/departments", "src/get-departments.php");
+Route::get("/departments/:id", "src/get-departments.php");
+Route::get("/departments/code/:code", "src/get-departments.php");
+Route::post("/departments", "src/add-department.php");
+Route::put("/departments/:id", "src/edit-department.php");
+Route::delete("/departments", "src/delete-department.php");		// Multi delete
+Route::delete("/departments/:id", "src/delete-department.php");	// Single delete
+
+// ROUTES: DEPARTMENT > PROGRAMS
+Route::get("/departments/:department_id/programs", "src/get-programs.php");
+Route::get("/departments/code/:department_code/programs", "src/get-programs.php");
+
+// ROUTES: PROGRAMS
+Route::get("/programs", "src/get-programs.php");
+Route::get("/programs/:id", "src/get-programs.php");
+Route::get("/programs/code/:code", "src/get-programs.php");
+Route::post("/programs", "src/add-program.php");
+Route::put("/programs/:id", "src/edit-program.php");
+Route::delete("/programs", "src/delete-program.php");		// Multi delete
+Route::delete("/programs/:id", "src/delete-program.php");	// Single delete
+
+// ROUTES: ORGANIZATIONS
+Route::get("/organizations", "src/get-organizations.php");
+Route::get("/organizations/:id", "src/get-organizations.php");
+Route::get("/organizations/code/:code", "src/get-organizations.php");
+Route::post("/organizations", "src/add-organization.php");
+Route::put("/organizations/:id", "src/edit-organization.php");
+Route::delete("/organizations/:id", "src/delete-organization.php");
+
+Route::post("/organizations-logo", "src/add-organization-logo.php");
+Route::put("/organizations-logo/:id", "src/edit-organization-logo.php");
+Route::delete("/organizations-logo/:id", "src/delete-organization-logo.php");
+
+// ROUTES: ORGANIZATION > EVENTS
+// USING ORG ID
+Route::get("/organizations/:organization_id/events", "src/get-events.php");
+Route::get("/organizations/:organization_id/events/:id", "src/get-events.php");
+Route::post("/organizations/:organization_id/events", "src/add-event.php");
+Route::put("/organizations/:organization_id/events/:id", "src/edit-event.php");
+Route::delete("/organizations/:organization_id/events", "src/delete-event.php");		// Multi delete
+Route::delete("/organizations/:organization_id/events/:id", "src/delete-event.php");	// Single delete
+// USING ORG CODE
+Route::get("/organizations/code/:organization_code/events", "src/get-events.php");
+Route::get("/organizations/code/:organization_code/events/:id", "src/get-events.php");
+Route::post("/organizations/code/:organization_code/events", "src/add-event.php");
+Route::put("/organizations/code/:organization_code/events/:id", "src/edit-event.php");
+Route::delete("/organizations/code/:organization_code/events", "src/delete-event.php");		// Multi delete
+Route::delete("/organizations/code/:organization_code/events/:id", "src/delete-event.php");	// Single delete
+
+// ROUTES: STUDENTS
+Route::get("/students", "src/get-students.php");
+Route::get("/students/:id", "src/get-students.php");
+Route::get("/students/number/:student_number", "src/get-students.php");
+Route::post("/students", "src/add-student.php");
+Route::put("/students/:id", "src/edit-student.php");
+Route::delete("/students", "src/delete-student.php");		// Multi delete
+Route::delete("/students/:id", "src/delete-student.php");	// Single delete
+
+// ROUTE: 404
+Route::add404("src/not-found.php");
