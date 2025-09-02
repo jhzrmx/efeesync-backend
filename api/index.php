@@ -15,6 +15,8 @@ if (!$_ENV["EFEESYNC_IS_PRODUCTION"]) {
 	// DEVELOPMENT MODE
 	header("Access-Control-Allow-Origin: " . $_ENV["EFEESYNC_DEV_FRONTEND_URL"]);
 	header("Access-Control-Allow-Credentials: true");
+	header("Access-Control-Allow-Methods: GET,POST,PUT,PATCH,DELETE,OPTIONS");
+	header("Access-Control-Allow-Headers: *");
 }
 
 // APPEND /api

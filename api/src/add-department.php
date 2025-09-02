@@ -13,7 +13,7 @@ if (!is_current_role_in(['admin'])) {
 
 $json_post_data = json_decode(file_get_contents("php://input"), true);
 
-$required_parameters = ["department_code", "department_name"];
+$required_parameters = ["department_code", "department_name", "department_color"];
 
 foreach ($required_parameters as $param) {
 	if (empty($json_post_data[$param])) {
@@ -26,15 +26,22 @@ $response = [];
 $response["status"] = "error";
 
 try {
-	$stmt = $pdo->prepare("INSERT INTO `departments` (`department_code`, `department_name`) VALUES (:department_code, :department_name)");
-	$stmt->bindParam(":department_code", $json_post_data["department_code"]);
-	$stmt->bindParam(":department_name", $json_post_data["department_name"]);
+	$dept_code = strtoupper(trim($json_post_data["department_code"]));
+	$dept_name = ucwords(trim($json_post_data["department_name"]));
+	$dept_color = trim($json_post_data["department_color"]);
+	$stmt = $pdo->prepare("INSERT INTO `departments` (`department_code`, `department_name`, `department_color`) VALUES (:department_code, :department_name, :department_color)");
+	$stmt->bindParam(":department_code", $dept_code);
+	$stmt->bindParam(":department_name", $dept_name);
+	$stmt->bindParam(":department_color", $dept_color);
 	$stmt->execute();
 	$response["status"] = "success";
 } catch (Exception $e) {
 	if (strpos($e->getMessage(), "Duplicate entry")) {
 		$response["message"] = "Department Code or Name already exists";
+	} else {
+		$response["message"] = $e->getMessage();
 	}
+
 }
 
 echo json_encode($response);

@@ -26,7 +26,7 @@ $response = [];
 $response["status"] = "error";
 
 try {
-	if ($empty($id)) throw new Exception("Department ID is required.");
+	if (empty($id)) throw new Exception("Department ID is required.");
 	$stmt = $pdo->prepare("UPDATE `departments` SET `department_code` = :new_department_code, `department_name` = :new_department_name WHERE `department_id` = :department_id");
 	$stmt->bindParam(":department_id", $id);
 	$stmt->bindParam(":new_department_code", $json_put_data["new_department_code"]);
