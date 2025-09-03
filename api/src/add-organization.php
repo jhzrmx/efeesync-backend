@@ -13,7 +13,7 @@ if (!is_current_role_in(['admin'])) {
 
 $json_post_data = json_decode(file_get_contents("php://input"), true);
 
-$required_parameters = ["organization_code", "organization_name", "organization_color", "department_code"];
+$required_parameters = ["organization_code", "organization_name" /*, "department_code"*/];
 
 foreach ($required_parameters as $param) {
 	if (empty($json_post_data[$param])) {
@@ -26,26 +26,36 @@ $response = [];
 $response["status"] = "error";
 
 try {
+	$dept_code = strtoupper(trim($json_post_data["department_code"]));
+	$org_code = strtoupper(trim($json_post_data["organization_code"]));
+	$org_name = ucwords(trim($json_post_data["organization_name"]));
+
 	$stmt = $pdo->prepare("SELECT * FROM `departments` WHERE `department_code` = :department_code");
-	$stmt->bindParam(":department_code", $json_post_data["department_code"];);
+	$stmt->bindParam(":department_code", $dept_code);
 	$stmt->execute();
 	$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	if (count($rows) == 0) {
-		$response["message"] = "Department does not exists";
+		// Allow null values for departments
+		$json_post_data["department_id"] = NULL;
+		/*$response["message"] = "Department does not exists";
 		echo json_encode($response);
 		exit();
-	}s
-	$json_post_data["department_id"] = $rows[0]["department_id"];
+		*/
+	} else {
+		$json_post_data["department_id"] = $rows[0]["department_id"];
+	}
 
-	$stmt = $pdo->prepare("INSERT INTO organizations (organization_code, organization_name, organization_color, department_id) VALUES (?, ?, ?, ?)");
-	$stmt->execute([$json_post_data["organization_code"], $json_post_data["organization_name"], $json_post_data["organization_color"], $json_post_data["department_id"]]);
+	$stmt = $pdo->prepare("INSERT INTO organizations (organization_code, organization_name, department_id) VALUES (?, ?, ?)");
+	$stmt->execute([$org_code, $org_name, $json_post_data["department_id"]]);
 
 	$response["status"] = "success";
-	$response["message"] = "Organization created successfully.";
-
 } catch (Exception $e) {
 	http_response_code(400);
-	$response["message"] = $e->getMessage();
+	if (strpos($e->getMessage(), "Duplicate entry")) {
+		$response["message"] = "Organization Code or Name already exists";
+	} else {
+		$response["message"] = $e->getMessage();
+	}
 }
 
 echo json_encode($response);

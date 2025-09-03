@@ -14,14 +14,15 @@ $response = [];
 $response["status"] = "error";
 
 try {
+	$sql = "SELECT `organization_id`, `organization_code`, `organization_name`, `organization_logo`, `organizations`.`department_id`, `department_code` FROM `organizations` LEFT JOIN `departments` ON `departments`.`department_id` = `organizations`.`department_id`";
 	if (isset($id)) {
-		$stmt = $pdo->prepare("SELECT * FROM `organizations` WHERE `organization_id` = :organization_id");
+		$stmt = $pdo->prepare($sql . " WHERE `organization_id` = :organization_id");
 		$stmt->bindParam(":organization_id", $id);
 	} elseif (isset($code)) {
-		$stmt = $pdo->prepare("SELECT * FROM `organizations` WHERE `organization_code` = :organization_code");
+		$stmt = $pdo->prepare($sql . " WHERE `organization_code` = :organization_code");
 		$stmt->bindParam(":organization_code", $code);
 	} else {
-		$stmt = $pdo->prepare("SELECT * FROM `organizations`");
+		$stmt = $pdo->prepare($sql);
 	}
 	$stmt->execute();
 	$data = $stmt->fetchAll(PDO::FETCH_ASSOC);

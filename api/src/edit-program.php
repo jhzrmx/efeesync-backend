@@ -13,7 +13,7 @@ if (!is_current_role_in(['admin'])) {
 
 $json_put_data = json_decode(file_get_contents("php://input"), true);
 
-$required_parameters = ["new_program_code", "new_program_name", "new_department_id"];
+$required_parameters = ["new_program_code", "new_program_name", "new_department_code"];
 
 foreach ($required_parameters as $param) {
 	if (empty($json_put_data[$param])) {
@@ -26,8 +26,10 @@ $response = [];
 $response["status"] = "error";
 
 try {
-	$stmt = $pdo->prepare("SELECT * FROM `departments` WHERE `department_id` = :department_id");
-	$stmt->bindParam(":department_id", $json_put_data["new_department_id"]);
+	if (!isset($id)) throw new Exception("ID is required");
+	
+	$stmt = $pdo->prepare("SELECT * FROM `departments` WHERE `department_code` = :department_code");
+	$stmt->bindParam(":department_code", $json_put_data["new_department_code"]);
 	$stmt->execute();
 	$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	if (count($rows) == 0) {
@@ -35,6 +37,7 @@ try {
 		echo json_encode($response);
 		exit();
 	}
+	$json_put_data["new_department_id"] = $rows[0]["department_id"];
 	
 	$stmt = $pdo->prepare("UPDATE `programs` SET `program_code` = :new_program_code, `program_name` = :new_program_name, `department_id` = :new_department_id WHERE `program_id` = :program_id");
 	$stmt->bindParam(":program_id", $id);

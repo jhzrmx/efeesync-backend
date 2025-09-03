@@ -27,6 +27,8 @@ $response = [];
 $response["status"] = "error";
 
 try {
+	$prog_code = strtoupper(trim($json_post_data["program_code"]));
+	$prog_name = ucwords(trim($json_post_data["program_name"]));
 	$stmt = $pdo->prepare("SELECT * FROM `departments` WHERE `department_code` = :department_code");
 	$stmt->bindParam(":department_code", $json_post_data["department_code"]);
 	$stmt->execute();
@@ -39,14 +41,16 @@ try {
 	$json_post_data["department_id"] = $rows[0]["department_id"];
 	
 	$stmt = $pdo->prepare("INSERT INTO `programs` (`program_code`, `program_name`, `department_id`) VALUES (:program_code, :program_name, :department_id)");
-	$stmt->bindParam(":program_code", $json_post_data["program_code"]);
-	$stmt->bindParam(":program_name", $json_post_data["program_name"]);
+	$stmt->bindParam(":program_code", $prog_code);
+	$stmt->bindParam(":program_name", $prog_name);
 	$stmt->bindParam(":department_id", $json_post_data["department_id"]);
 	$stmt->execute();
 	$response["status"] = "success";
 } catch (Exception $e) {
 	if (strpos($e->getMessage(), "Duplicate entry")) {
 		$response["message"] = "Department Code or Name already exists";
+	} else {
+		$response["message"] = $e->getMessage();
 	}
 }
 

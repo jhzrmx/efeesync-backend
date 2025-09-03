@@ -30,6 +30,9 @@ Route::post("/logout", "src/logout.php");
 // ROUTES: USER
 Route::get("/users/current", "src/get-current-user.php");
 
+// ROUTES: DASHBOARD DATA
+Route::get("/admin/dashboard", "src/get-admin-dashboard.php");
+
 // ROUTES: DEPARTMENTS
 Route::get("/departments", "src/get-departments.php");
 Route::get("/departments/:id", "src/get-departments.php");

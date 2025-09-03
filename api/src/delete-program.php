@@ -16,7 +16,6 @@ $response = [];
 $response["status"] = "error";
 
 try {
-	$program_ids = $json_delete_data['program_ids'];
 	if (isset($id)) { // Single delete
 		$stmt = $pdo->prepare("SELECT * FROM `programs` WHERE `program_id` = :program_id");
 		$stmt->bindParam(":program_id", $id);
@@ -31,7 +30,7 @@ try {
 		$stmt->bindParam(":program_id", $id);
 		$stmt->execute();
 		$response["status"] = "success";
-	} elseif (!empty($program_ids) && is_array($program_ids)) { // Multi delete
+	} elseif (!empty($json_delete_data['program_ids']) && is_array($json_delete_data['program_ids'])) { // Multi delete
 		$placeholders = rtrim(str_repeat('?,', count($program_ids)), ',');
 		$stmt = $pdo->prepare("DELETE FROM `programs` WHERE `program_id` in ($placeholders)");
 		$stmt->execute($program_ids);
