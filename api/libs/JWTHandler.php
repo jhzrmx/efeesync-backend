@@ -17,7 +17,7 @@ class JWTHandler {
     }
 
     public function getSecret() {
-        return $this->$secret;
+        return $this->secret;
     }
 
     public function createToken($payload) {

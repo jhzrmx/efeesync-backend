@@ -38,6 +38,10 @@ class EnvLoader {
             $_ENV[$name] = self::convertKeyValue($value);
         }
     }
+
+	public static function load($filePath = ".env") {
+        return self::loadFromFile($filePath);
+    }
     
     private static function convertKeyValue($value) {
         if (strtolower($value) === "true") return true;

@@ -19,6 +19,12 @@ if (!$_ENV["EFEESYNC_IS_PRODUCTION"]) {
 	header("Access-Control-Allow-Headers: *");
 }
 
+// HANDLE PREFLIGHT REQUESTS
+if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
+    http_response_code(204);
+    exit();
+}
+
 // APPEND /api
 Route::enableBasePath();
 
@@ -27,8 +33,12 @@ Route::post("/login", "src/login.php");
 Route::get("/verify-login", "src/verify-login.php");
 Route::post("/logout", "src/logout.php");
 
+//ROUTES: ROLES
+Route::get("/roles", "src/get-roles.php");
+
 // ROUTES: USER
 Route::get("/users/current", "src/get-current-user.php");
+Route::put("/users/current/password", "src/edit-current-user-password.php");
 
 // ROUTES: DASHBOARD DATA
 Route::get("/admin/dashboard", "src/get-admin-dashboard.php");
@@ -73,6 +83,8 @@ Route::get("/organizations/:organization_id/events", "src/get-events.php");
 Route::get("/organizations/:organization_id/events/:id", "src/get-events.php");
 Route::post("/organizations/:organization_id/events", "src/add-event.php");
 Route::put("/organizations/:organization_id/events/:id", "src/edit-event.php");
+Route::put("/organizations/:organization_id/events/:id/attendance", "src/edit-event-attendance.php");
+Route::put("/organizations/:organization_id/events/:id/contribution", "src/edit-event-contribution.php");
 Route::delete("/organizations/:organization_id/events", "src/delete-event.php");		// Multi delete
 Route::delete("/organizations/:organization_id/events/:id", "src/delete-event.php");	// Single delete
 // USING ORG CODE

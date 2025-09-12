@@ -18,7 +18,7 @@ $response["status"] = "error";
 try {
 	if (isset($id)) {
 		// Single delete using route param
-		$stmt = $pdo->prepare("DELETE FROM students WHERE student_id = ?");
+		$stmt = $pdo->prepare("DELETE FROM users WHERE user_id IN (SELECT user_id FROM students WHERE student_id = ?)");
 		$stmt->execute([$id]);
 
 		$response["status"] = "success";
@@ -27,7 +27,7 @@ try {
 	} elseif (!empty($json["id"]) && is_array($json["id"])) {
 		// Multi delete from request body
 		$placeholders = implode(",", array_fill(0, count($json["id"]), "?"));
-		$stmt = $pdo->prepare("DELETE FROM students WHERE student_id IN ($placeholders)");
+		$stmt = $pdo->prepare("DELETE FROM users WHERE user_id IN (SELECT user_id FROM students WHERE student_id IN ($placeholders))");
 		$stmt->execute($json["id"]);
 
 		$response["status"] = "success";

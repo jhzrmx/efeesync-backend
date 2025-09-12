@@ -43,7 +43,7 @@ try {
 	$pdo->beginTransaction();
 
 	// Update users table
-	if ($first && $last) {
+	if ($first_name && $last_name) {
 		$email = generate_email($first_name, $last_name);
 
 		// Check if new email already exists (and not from this user)

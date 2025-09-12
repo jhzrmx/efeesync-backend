@@ -17,6 +17,7 @@ $required_parameters = ["new_program_code", "new_program_name", "new_department_
 
 foreach ($required_parameters as $param) {
 	if (empty($json_put_data[$param])) {
+		http_response_code(400);
 		echo json_encode(["status" => "error", "message" => snake_to_capital($param)." is required"]);
 		exit();
 	}
