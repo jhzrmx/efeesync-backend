@@ -238,9 +238,9 @@ CREATE TABLE attendance_excuse (
     attendance_excuse_reason TEXT NOT NULL,
     attendance_excuse_proof_file VARCHAR(255) NOT NULL,
     attendance_excuse_status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
-    attendance_id INT NOT NULL,
+    event_attend_date_id INT NOT NULL,
     student_id INT NOT NULL,
-    FOREIGN KEY (attendance_id) REFERENCES attendance_made(attendance_id)
+    FOREIGN KEY (event_attend_date_id) REFERENCES event_attendance_dates(event_attend_date_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (student_id) REFERENCES students(student_id)
         ON DELETE CASCADE ON UPDATE CASCADE

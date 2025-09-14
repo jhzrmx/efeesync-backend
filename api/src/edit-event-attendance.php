@@ -4,55 +4,58 @@ require_once "_middleware.php";
 require_once "_request.php";
 
 header("Content-Type: application/json");
-
-require_role("treasurer");
+require_role(["admin", "treasurer"]);
 
 $response = ["status" => "error"];
 
 try {
-    if (!isset($organization_id)) throw new Exception("Missing organization identifier in URL.");
-    if (!isset($event_id)) throw new Exception("Missing event identifier in URL.");
-    if (!isset($date)) throw new Exception("Missing attendance date in URL.");
+    $data = json_request_body();
+    require_params($data, ["attendance"]);
 
-    $json_put_data = json_request_body();
-    if (!$json_put_data || !isset($json_put_data["event_attend_time"])) {
-        throw new Exception("Invalid JSON payload.");
+    // check if event exists
+    $stmt = $pdo->prepare("SELECT event_id FROM events WHERE event_id = :id AND organization_id = :org_id LIMIT 1");
+    $stmt->execute([":id" => $id, ":org_id" => $organization_id]);
+    $event = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$event) {
+        echo json_encode(["status" => "error", "message" => "Event not found"]);
+        exit();
     }
 
-    // event_attend_time is an array like ["AM IN", "AM OUT"]
-    $pdo->beginTransaction();
-
-    // Delete existing attendance records for this event and date
-    $stmt = $pdo->prepare("DELETE FROM event_attendance WHERE event_id = :event_id AND event_attend_date = :date");
-    $stmt->execute([
-        ":event_id" => $event_id,
-        ":date" => $date
-    ]);
-
-    // Insert new attendance rows based on the specified times
-    $stmt = $pdo->prepare("
-        INSERT INTO event_attendance (event_attend_date, event_attend_time, event_attend_sanction_fee, event_id)
-        VALUES (:date, :time_type, :sanction_fee, :event_id)
+    // check if attendance already has logs
+    $stmt_check = $pdo->prepare("
+        SELECT COUNT(*) FROM attendance_made am
+        JOIN event_attendance_times eat ON am.event_attend_time_id = eat.event_attend_time_id
+        JOIN event_attendance_dates ead ON eat.event_attend_date_id = ead.event_attend_date_id
+        WHERE ead.event_id = :event_id
     ");
+    $stmt_check->execute([":event_id" => $id]);
+    $hasLogs = $stmt_check->fetchColumn() > 0;
 
-    $sanction_fee = isset($json_put_data["event_attend_sanction_fee"]) ? $json_put_data["event_attend_sanction_fee"] : 0;
-
-    foreach ($json_put_data["event_attend_time"] as $time_type) {
-        $stmt->execute([
-            ":date" => $date,
-            ":time_type" => $time_type,
-            ":sanction_fee" => $sanction_fee,
-            ":event_id" => $event_id
-        ]);
+    if ($hasLogs) {
+        echo json_encode(["status" => "error", "message" => "Cannot edit attendance, logs already recorded"]);
+        exit();
     }
 
-    $pdo->commit();
-    $response["status"] = "success";
-    $response["message"] = "Event attendance updated successfully.";
+    // delete existing attendance setup
+    $stmt_delete = $pdo->prepare("DELETE FROM event_attendance_dates WHERE event_id = :event_id");
+    $stmt_delete->execute([":event_id" => $id]);
 
+    // reinsert attendance dates + times
+    foreach ($data["attendance"] as $att) {
+        $stmt_date = $pdo->prepare("INSERT INTO event_attendance_dates (event_id, event_attend_date) VALUES (:event_id, :att_date)");
+        $stmt_date->execute([":event_id" => $id, ":att_date" => $att["event_attend_date"]]);
+        $date_id = $pdo->lastInsertId();
+
+        foreach ($att["event_attend_time"] as $time) {
+            $stmt_time = $pdo->prepare("INSERT INTO event_attendance_times (event_attend_date_id, event_attend_time) VALUES (:date_id, :time)");
+            $stmt_time->execute([":date_id" => $date_id, ":time" => $time]);
+        }
+    }
+
+    $response["status"] = "success";
+    $response["message"] = "Event attendance updated successfully";
 } catch (Exception $e) {
-    if ($pdo->inTransaction()) $pdo->rollBack();
-    http_response_code(400);
     $response["message"] = $e->getMessage();
 }
 
