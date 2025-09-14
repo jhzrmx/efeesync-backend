@@ -29,6 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 Route::enableBasePath();
 
 // ROUTES: BASIC AUTH
+Route::post("/check-roles", "src/check-roles.php");
 Route::post("/login", "src/login.php");
 Route::get("/verify-login", "src/verify-login.php");
 Route::post("/logout", "src/logout.php");

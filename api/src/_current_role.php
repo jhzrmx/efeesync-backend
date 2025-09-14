@@ -1,5 +1,4 @@
 <?php
-require_once "_connect_to_database.php";
 require_once "./libs/JWTHandler.php";
 
 /**

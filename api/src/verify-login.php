@@ -15,11 +15,9 @@ $validation = $jwt->validateToken($login_token);
 if ($validation["is_valid"]) {
 	$response["status"] = "success";
 	$response["current_user_id"] = $validation["payload"]["user_id"];
-	$response["current_role_id"] = $validation["payload"]["role_id"];
 	$response["current_role"] = $validation["payload"]["role"];
 } else {
 	$response["current_user_id"] = 0;
-	$response["current_role_id"] = 0;
 	$response["current_role"] = null;
 }
 

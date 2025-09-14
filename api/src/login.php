@@ -1,76 +1,157 @@
 <?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
-require_once "_snake_to_capital.php";
 require_once "./libs/JWTHandler.php";
+require_once "_current_role.php";
+require_once "_request.php";
 
 header("Content-Type: application/json");
 
-if (current_role() != null) {
-	echo json_encode(["status" => "success", "message" => "You're already logged in"]);
+$data = json_request_body();
+require_params($data, ["email", "password"]);
+
+if (current_role()) {
+	echo json_encode([
+		"status"  => "success",
+		"message" => "You're already logged in",
+		"data"    => [
+			"current_user_id" => current_jwt_payload()["user_id"],
+			"current_role"    => current_jwt_payload()["role"]
+		]
+	]);
 	exit();
 }
 
-$json_post_data = json_decode(file_get_contents("php://input"), true);
-
-$required_parameters = ["email", "password"];
-
-foreach ($required_parameters as $param) {
-	if (empty($json_post_data[$param])) {
-		echo json_encode(["status" => "error", "message" => snake_to_capital($param)." is required"]);
-		exit();
-	}
-}
-
-$response = [];
-$response["status"] = "error";
+$email = trim($data["email"]);
+$password = trim($data["password"]);
+$requestedRole = isset($data["role"]) ? strtolower(trim($data["role"])) : null;
 
 try {
-	$stmt = $pdo->prepare("SELECT `users`.*, `roles`.* FROM `users`
-		JOIN `roles` on `users`.`role_id` = `roles`.`role_id`
-		WHERE `institutional_email` = :institutional_email
+	// Check user
+	$stmt = $pdo->prepare("
+		SELECT u.user_id, u.password, r.role_name, u.role_id
+		FROM users u
+		JOIN roles r ON u.role_id = r.role_id
+		WHERE u.institutional_email = :email
 		LIMIT 1
 	");
-	$stmt->bindParam(":institutional_email", $json_post_data["email"]);
-	$stmt->execute();
-	$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-	if (count($rows) > 0) {
-		$first_result = $rows[0];
-		if (password_verify($json_post_data["password"], $first_result["password"])) {
-			$payload = [
-				"user_id" => $first_result["user_id"],
-				"role_id" => $first_result["role_id"],
-				"role" => $first_result["role_name"],
-				"exp" => time() + (3600 * 24 * 15), // 15 days
-				"nbf" => time(),
-			];
-			$jwt = new JWTHandler($_ENV["EFEESYNC_JWT_SECRET"]);
-			$login_token = $jwt->createToken($payload);
-			setcookie(
-				"basta",
-				$login_token, [
-					"expires" => $payload["exp"],
-					"path" => "/",
-					"secure" => $_ENV["EFEESYNC_IS_PRODUCTION"],
-					"httponly" => true,
-					"samesite" => $_ENV["EFEESYNC_IS_PRODUCTION"] ? "Strict" : "Lax"
-				]
-			);
-			$response["status"] = "success";
-			$response["message"] = "Login successful";
-			$response["data"] = [
-			    "current_user_id" => $first_result["user_id"],
-				"current_role_id" => $first_result["role_id"],
-				"current_role" => $first_result["role_name"]
-			];
-		} else {
-			$response["message"] = "Wrong password";
-		}
-	} else {
-		$response["message"] = "User not found";
+	$stmt->execute([":email" => $email]);
+	$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+	if (!$user || !password_verify($password, $user["password"])) {
+		echo json_encode(["status" => "error", "message" => "Invalid credentials"]);
+		exit();
 	}
+
+	// Build list of roles
+	$roles = [];
+
+	if ($user["role_name"] === "admin") {
+		$roles[] = [
+			"role_name" => "admin"
+		];
+	} elseif ($user["role_name"] === "student") {
+		// Base student role with department_code
+		$stmt = $pdo->prepare("
+			SELECT d.department_code
+			FROM students s
+			JOIN programs p ON s.student_current_program = p.program_id
+			JOIN departments d ON p.department_id = d.department_id
+			WHERE s.user_id = :user_id
+			LIMIT 1
+		");
+		$stmt->execute([":user_id" => $user["user_id"]]);
+		$student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+		if ($student) {
+			$roles[] = [
+				"role_name"       => "student",
+				"department_code" => $student["department_code"]
+			];
+		}
+
+		// Org officer roles
+		$stmt = $pdo->prepare("
+			SELECT o.organization_code, oo.designation
+			FROM students s
+			JOIN organization_officers oo ON s.student_id = oo.student_id
+			JOIN organizations o ON oo.organization_id = o.organization_id
+			WHERE s.user_id = :user_id
+		");
+		$stmt->execute([":user_id" => $user["user_id"]]);
+		$officers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+		foreach ($officers as $officer) {
+			$roles[] = [
+				"role_name"        => strtolower($officer["designation"]),
+				"organization_code"=> $officer["organization_code"]
+			];
+		}
+	}
+
+	// Determine active role
+	if (count($roles) > 1 && !$requestedRole) {
+		echo json_encode([
+			"status" => "error",
+			"message" => "Multiple roles available. Please specify 'role' in request.",
+			"available_roles" => $roles
+		]);
+		exit();
+	}
+
+	// If only one role, auto-pick it
+	$activeRole = $roles[0];
+	if ($requestedRole) {
+		$found = false;
+		foreach ($roles as $role) {
+			if ($role["role_name"] === $requestedRole) {
+				$activeRole = $role;
+				$found = true;
+				break;
+			}
+		}
+		if (!$found) {
+			echo json_encode([
+				"status" => "error",
+				"message" => "Invalid role selected",
+				"available_roles" => $roles
+			]);
+			exit();
+		}
+	}
+
+	// Create JWT
+	$jwt = new JWTHandler($_ENV["EFEESYNC_JWT_SECRET"]);
+	$payload = [
+		"user_id" => $user["user_id"],
+		"role"    => $activeRole["role_name"],
+		"exp"     => time() + (3600 * 24 * 15), // 15 days
+		"nbf"     => time(),
+	];
+	$token = $jwt->createToken($payload);
+
+	// Set cookie
+	setcookie("basta", $token, [
+		"expires"  => $payload["exp"],
+		"path"     => "/",
+		"secure"   => $_ENV["EFEESYNC_IS_PRODUCTION"],
+		"httponly" => true,
+		"samesite" => $_ENV["EFEESYNC_IS_PRODUCTION"] ? "Strict" : "Lax"
+	]);
+	
+	$response = [
+		"status"  => "success",
+		"message" => "Login successful",
+		"data"    => [
+			"current_user_id" => $user["user_id"],
+			"current_role"    => $activeRole
+		]
+	];
 } catch (Exception $e) {
-	$response["message"] = $e->getMessage();
+	http_response_code(400);
+	$response = [
+		"status"  => "error",
+		"message" => $e->getMessage()
+	];
 }
 
 echo json_encode($response);
