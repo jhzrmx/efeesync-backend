@@ -37,6 +37,18 @@ try {
 
     $conditions = [];
     $params = [];
+	
+	// student_id filter
+    if (isset($id)) {
+        $conditions[] = "s.student_id = :id";
+        $params[":id"] = $id;
+    }
+	
+	// student_number_id filter
+    if (isset($student_number)) {
+        $conditions[] = "s.student_number_id = :student_number";
+        $params[":student_number"] = $student_number;
+    }
 
     // department_id filter
     if (isset($department_id)) {
