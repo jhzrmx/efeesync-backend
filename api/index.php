@@ -93,6 +93,8 @@ Route::get("/organizations/code/:organization_code/events", "src/get-events.php"
 Route::get("/organizations/code/:organization_code/events/:id", "src/get-events.php");
 Route::post("/organizations/code/:organization_code/events", "src/add-event.php");
 Route::put("/organizations/code/:organization_code/events/:id", "src/edit-event.php");
+Route::put("/organizations/code/:organization_code/events/:id/attendance", "src/edit-event-attendance.php");
+Route::put("/organizations/code/:organization_code/events/:id/contribution", "src/edit-event-contribution.php");
 Route::delete("/organizations/code/:organization_code/events", "src/delete-event.php");		// Multi delete
 Route::delete("/organizations/code/:organization_code/events/:id", "src/delete-event.php");	// Single delete
 
@@ -100,6 +102,7 @@ Route::delete("/organizations/code/:organization_code/events/:id", "src/delete-e
 Route::get("/students", "src/get-students.php");
 Route::get("/students/:id", "src/get-students.php");
 Route::get("/students/number/:student_number", "src/get-students.php");
+Route::get("/students/search/:search", "src/get-students.php");
 Route::post("/students", "src/add-student.php");
 Route::put("/students/:id", "src/edit-student.php");
 Route::delete("/students", "src/delete-student.php");		// Multi delete

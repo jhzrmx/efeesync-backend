@@ -1,19 +1,14 @@
 <?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
+require_once "_middleware.php";
 
 header("Content-Type: application/json");
 
-if (!is_current_role_in(["admin", "treasurer"])) {
-	http_response_code(403);
-	echo json_encode(["status" => "error", "message" => "Forbidden"]);
-	exit();
-}
+require_role(["admin", "treasurer"]);
 
 $response = [];
 $response["status"] = "error";
 
-$current_role = current_role();
 try {
 	$sql = "SELECT 
 		    s.student_id, 
@@ -26,8 +21,6 @@ try {
 		    u.last_name, 
 		    u.middle_initial, 
 		    u.picture,
-		    r.role_id, 
-		    r.role_name,
 		    p.program_code,
 		    d.department_code,
 		    -- build full name in SQL
@@ -38,7 +31,6 @@ try {
 		    END AS full_name
 		FROM students s
 		JOIN users u ON u.user_id = s.user_id
-		JOIN roles r ON r.role_id = u.role_id
 		JOIN programs p ON p.program_id = s.student_current_program
 		JOIN departments d ON d.department_id = p.department_id";
 

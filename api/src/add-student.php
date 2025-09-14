@@ -1,37 +1,22 @@
 <?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
-require_once "_generate_email.php";
-require_once "_snake_to_capital.php";
+require_once "_middleware.php";
+require_once "_request.php";
 
 header("Content-Type: application/json");
 
-if (!is_current_role_in(["admin", "treasurer"])) {
-    http_response_code(403);
-    echo json_encode(["status" => "error", "message" => "Forbidden"]);
-    exit();
-}
+require_role(["admin", "treasurer"]);
 
-$json = json_decode(file_get_contents("php://input"), true);
+$response = ["status" => "error"];
 
-$required = [
+$json = json_request_body();
+require_params($json_post_data,  [
     "student_number_id",
     "student_section",
     "first_name",
     "last_name",
     "student_current_program"
-];
-
-foreach ($required as $field) {
-    if (empty($json[$field])) {
-        http_response_code(400);
-        echo json_encode([
-            "status" => "error",
-            "message" => snake_to_capital($field)." is required"
-        ]);
-        exit();
-    }
-}
+]);
 
 $email = generate_email($json["first_name"], $json["last_name"]);
 $password_raw = "cbsua-" . $json["student_number_id"];
@@ -51,7 +36,7 @@ try {
     $stmt->execute([
         $email,
         $hashed_password,
-        103, // student role
+        102, // student role
         $last_name,
         $first_name,
         $middle_initial
