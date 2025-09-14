@@ -39,15 +39,15 @@ try {
     $params = [];
 
     // department_id filter
-    if (isset($id)) {
+    if (isset($department_id)) {
         $conditions[] = "d.department_id = :dept_id";
-        $params[":dept_id"] = $id;
+        $params[":dept_id"] = $department_id;
     }
 
     // department_code filter
-    if (isset($code)) {
+    if (isset($department_code)) {
         $conditions[] = "d.department_code = :dept_code";
-        $params[":dept_code"] = $code;
+        $params[":dept_code"] = $department_code;
     }
 
     // search filter
