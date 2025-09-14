@@ -108,5 +108,11 @@ Route::put("/students/:id", "src/edit-student.php");
 Route::delete("/students", "src/delete-student.php");		// Multi delete
 Route::delete("/students/:id", "src/delete-student.php");	// Single delete
 
+// ROUTES: DEPARTMENT > STUDENTS
+Route::get("/departments/:department_id/students", "src/get-students.php");
+Route::get("/departments/:department_id/students/search/:search", "src/get-students.php");
+Route::get("/departments/code/:department_code/students", "src/get-students.php");
+Route::get("/departments/code/:department_code/students/search/:search", "src/get-students.php");
+
 // ROUTE: 404
 Route::add404("src/not-found.php");
