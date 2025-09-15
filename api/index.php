@@ -40,6 +40,8 @@ Route::get("/roles", "src/get-roles.php");
 // ROUTES: USER
 Route::get("/users/current", "src/get-current-user.php");
 Route::put("/users/current/password", "src/edit-current-user-password.php");
+Route::post("/users/picture/:id", "src/edit-user-picture.php");
+Route::delete("/users/picture/:id", "src/delete-user-picture.php");
 
 // ROUTES: DASHBOARD DATA
 Route::get("/admin/dashboard", "src/get-admin-dashboard.php");
@@ -74,9 +76,8 @@ Route::post("/organizations", "src/add-organization.php");
 Route::put("/organizations/:id", "src/edit-organization.php");
 Route::delete("/organizations/:id", "src/delete-organization.php");
 
-Route::post("/organizations-logo", "src/add-organization-logo.php");
-Route::put("/organizations-logo/:id", "src/edit-organization-logo.php");
-Route::delete("/organizations-logo/:id", "src/delete-organization-logo.php");
+Route::post("/organizations/logo/:id", "src/edit-organization-logo.php");
+Route::delete("/organizations/logo/:id", "src/delete-organization-logo.php");
 
 // ROUTES: ORGANIZATION > EVENTS
 // USING ORG ID
