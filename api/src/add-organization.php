@@ -1,29 +1,16 @@
 <?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
-require_once "_snake_to_capital.php";
+require_once "_middleware.php";
+require_once "_request.php";
 
 header("Content-Type: application/json");
 
-if (!is_current_role_in(['admin'])) {
-	http_response_code(403);
-	echo json_encode(["status" => "error", "message" => "Forbidden"]);
-	exit();
-}
+require_role("admin");
 
-$json_post_data = json_decode(file_get_contents("php://input"), true);
+$json_post_data = json_request_body();
+require_params($json_post_data, ["organization_code", "organization_name" /*, "department_code"*/]);
 
-$required_parameters = ["organization_code", "organization_name" /*, "department_code"*/];
-
-foreach ($required_parameters as $param) {
-	if (empty($json_post_data[$param])) {
-		echo json_encode(["status" => "error", "message" => snake_to_capital($param)." is required"]);
-		exit();
-	}
-}
-
-$response = [];
-$response["status"] = "error";
+$response = ["status" => "error"];
 
 try {
 	$dept_code = strtoupper(trim($json_post_data["department_code"]));

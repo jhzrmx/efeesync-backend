@@ -1,19 +1,16 @@
 <?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
+require_once "_middleware.php";
 require_once "_upload_dirs.php";
 
 header("Content-Type: application/json");
 
-if (!is_current_role_in(['admin', 'treasurer'])) {
-	http_response_code(403);
-	echo json_encode(["status" => "error", "message" => "Forbidden"]);
-	exit();
-}
+require_login();
 
 $response = ["status" => "error"];
 
 try {
+	if (!isset($id)) throw new Exception("Missing user identifier in route");
 	// Get current logo
 	$stmt = $pdo->prepare("SELECT picture FROM users WHERE user_id = ?");
 	$stmt->execute([$id]);

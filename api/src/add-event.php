@@ -19,8 +19,6 @@ require_params($json_post_data, [
 $response = ["status" => "error"];
 
 try {
-    $input = get_json_body();
-	
     if (isset($organization_id])) {
         $organization_id = intval($organization_id]);
     } elseif (isset($organization_code)) {
@@ -45,18 +43,18 @@ try {
     ");
     $stmt->execute([
         $organization_id,
-        $input["event_name"],
-        $input["event_description"],
+        $json_post_data["event_name"],
+        $json_post_data["event_description"],
         implode(",", $input["event_target_year_levels"]),
-        $input["event_start_date"],
-        $input["event_end_date"],
-        $input["event_sanction_has_comserv"] ? 1 : 0
+        $json_post_data["event_end_date"],
+        $json_post_data["event_start_date"],
+        $json_post_data["event_sanction_has_comserv"] ? 1 : 0
     ]);
     $event_id = $pdo->lastInsertId();
 
     // Contribution (optional)
-    if (isset($input["contribution"])) {
-        $c = $input["contribution"];
+    if (isset($json_post_data["contribution"])) {
+        $c = $json_post_data["contribution"];
         $stmt_contri = $pdo->prepare("
             INSERT INTO event_contributions 
                 (event_id, event_contri_due_date, event_contri_fee, event_contri_sanction_fee) 
@@ -71,8 +69,8 @@ try {
     }
 
     // Attendance (optional)
-    if (isset($input["attendance"])) {
-        foreach ($input["attendance"] as $att) {
+    if (isset($json_post_data["attendance"])) {
+        foreach ($json_post_data["attendance"] as $att) {
             $stmt_date = $pdo->prepare("
                 INSERT INTO event_attendance_dates (event_id, event_attend_date) 
                 VALUES (?, ?)

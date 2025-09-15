@@ -1,14 +1,10 @@
 <?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
+require_once "_middleware.php";
 
 header("Content-Type: application/json");
 
-if (!is_current_role_in(['admin'])) {
-	http_response_code(403);
-	echo json_encode(["status" => "error", "message" => "Forbidden"]);
-	exit();
-}
+require_role("admin");
 
 $response = ["status" => "error"];
 
