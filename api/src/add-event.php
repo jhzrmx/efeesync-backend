@@ -12,18 +12,17 @@ require_params($json_post_data, [
     "event_name",
     "event_description",
     "event_start_date",
-    "event_end_date",
     "event_target_year_levels"
 ]);
 
 $response = ["status" => "error"];
 
 try {
-    if (isset($organization_id])) {
-        $organization_id = intval($organization_id]);
+    if (isset($organization_id)) {
+        $organization_id = intval($organization_id);
     } elseif (isset($organization_code)) {
         $stmt_org = $pdo->prepare("SELECT organization_id FROM organizations WHERE organization_code = ?");
-        $stmt_org->execute([$organization_code]]);
+        $stmt_org->execute([$organization_code]);
         $org = $stmt_org->fetch(PDO::FETCH_ASSOC);
         if (!$org) throw new Exception("Organization not found");
         $organization_id = $org["organization_id"];
@@ -45,9 +44,9 @@ try {
         $organization_id,
         $json_post_data["event_name"],
         $json_post_data["event_description"],
-        implode(",", $input["event_target_year_levels"]),
-        $json_post_data["event_end_date"],
+        implode(",", $json_post_data["event_target_year_levels"]),
         $json_post_data["event_start_date"],
+        $json_post_data["event_end_date"],
         $json_post_data["event_sanction_has_comserv"] ? 1 : 0
     ]);
     $event_id = $pdo->lastInsertId();
@@ -79,11 +78,13 @@ try {
             $date_id = $pdo->lastInsertId();
 
             foreach ($att["event_attend_time"] as $time) {
+                $sanctionFee = isset($att["event_attend_sanction_fee"]) && $att["event_attend_sanction_fee"] !== "" ? $att["event_attend_sanction_fee"] : 0;
+
                 $stmt_time = $pdo->prepare("
-                    INSERT INTO event_attendance_times (event_attend_date_id, event_attend_time_label) 
-                    VALUES (?, ?)
+                    INSERT INTO event_attendance_times (event_attend_date_id, event_attend_time, event_attend_sanction_fee) 
+                    VALUES (?, ?, ?)
                 ");
-                $stmt_time->execute([$date_id, $time]);
+                $stmt_time->execute([$date_id, $time, $sanctionFee]);
             }
         }
     }

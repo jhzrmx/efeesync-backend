@@ -280,7 +280,8 @@ INSERT INTO `roles` (`role_id`, `role_name`) VALUES
 INSERT INTO `users` (`user_id`, `institutional_email`, `password`, `role_id`, `last_name`, `first_name`, `middle_initial`, `picture`) VALUES
 (100001,	'admin@cbsua.edu.ph',	'$2y$10$BO3FUTiAZXv7nMhNn7DSu.NIAcMm4UsIpVVyJ5A4CTj90HmRkx4N2',	101,	'ADMIN LAST NAME',	'ADMIN FIRST NAME',	'MI',	'default.jpg'),
 (100002,	'treasurer@cbsua.edu.ph',	'$2y$10$cRnaAYqfwT2xur7J20ig1up2e87iAQ8QK7oR2n.GNvDBW2M48vxQi',	102,	'TREASURER LAST NAME',	'TREASURER FIRST NAME',	'MI',	'default.jpg'),
-(100003,	'student@cbsua.edu.ph',	'$2y$10$eeWzE7/NH6eSsIeTax2iJucBR52Ct8pUxGzRdxP1NC7.zw/W3Bbj2',	102,	'STUDENT LAST NAME',	'STUDENT FIRST NAME',	'MI',	'default.jpg');
+(100003,	'student@cbsua.edu.ph',	'$2y$10$eeWzE7/NH6eSsIeTax2iJucBR52Ct8pUxGzRdxP1NC7.zw/W3Bbj2',	102,	'STUDENT LAST NAME',	'STUDENT FIRST NAME',	'MI',	'default.jpg'),
+(100004,	'ssc@cbsua.edu.ph',	'$2y$10$JHkHo9CvAztimUROgmhtX.GJ1quwdamM3xqtuzVr7HCUkxgVyqB3i',	102,	'SSC',	'SSC',	NULL,	'default.jpg');
 
 INSERT INTO `departments` (`department_id`, `department_code`, `department_name`, `department_color`) VALUES
 (1001, 'CIT',	'College of Information Technology', '#4F1C51'),
@@ -308,7 +309,9 @@ INSERT INTO `organizations` (`organization_id`, `organization_code`, `organizati
 
 INSERT INTO `students` (`student_id`, `student_number_id`, `user_id`, `student_section`, `student_current_program`) VALUES
 (1001,	'23-5374',	100002,	'3B',	1001),
-(1002,	'23-2658',	100003,	'3C',	1001);
+(1002,	'23-2658',	100003,	'3C',	1001),
+(1003,	'24-5634',	100004,	'2B',	1007);
 
-INSERT INTO `organization_officers` (`student_id`, `designation`, `organization_id`) VALUES
-(1001, 'treasurer', 1001);
+INSERT INTO `organization_officers` (`organization_officer_id`, `student_id`, `designation`, `organization_id`) VALUES
+(1001,	1001,	'treasurer',	1001),
+(1002,	1003,	'treasurer',	1006);

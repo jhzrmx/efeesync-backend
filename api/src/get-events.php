@@ -14,6 +14,8 @@ try {
                 e.event_id,
                 e.event_name,
                 e.event_description,
+                e.event_start_date,
+                e.event_end_date,
                 e.event_target_year_levels,
                 e.event_picture,
                 e.event_sanction_has_comserv
@@ -81,18 +83,26 @@ try {
         $attendance = [];
         foreach ($dates as $d) {
             $stmt_times = $pdo->prepare("
-                SELECT event_attend_time
+                SELECT event_attend_time, event_attend_sanction_fee
                 FROM event_attendance_times
                 WHERE event_attend_date_id = :date_id
                 ORDER BY event_attend_time_id ASC
             ");
             $stmt_times->bindParam(":date_id", $d["event_attend_date_id"]);
             $stmt_times->execute();
-            $times = $stmt_times->fetchAll(PDO::FETCH_COLUMN);
+            $times = $stmt_times->fetchAll(PDO::FETCH_ASSOC);
+
+            // build array of just times
+            $timeLabels = array_column($times, "event_attend_time");
+
+            // calculate average sanction fee (if needed)
+            $fees = array_column($times, "event_attend_sanction_fee");
+            $avgFee = !empty($fees) ? array_sum($fees) / count($fees) : null;
 
             $attendance[] = [
                 "event_attend_date" => $d["event_attend_date"],
-                "event_attend_time" => $times
+                "event_attend_time" => $timeLabels,
+                "event_attend_sanction_fee" => $avgFee
             ];
         }
         $events[$i]["attendance"] = $attendance;
