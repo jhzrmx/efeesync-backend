@@ -102,59 +102,124 @@ try {
     }
 
     // Attendance handling (if present in payload)
-    if (isset($input['attendance'])) {
-        // Check whether attendance (actual logs) exist for this event
-        $stmt_check_attendance = $pdo->prepare("
-            SELECT COUNT(*) FROM attendance_made am
-            JOIN event_attendance_times eat ON am.event_attend_time_id = eat.event_attend_time_id
-            JOIN event_attendance_dates ead ON eat.event_attend_date_id = ead.event_attend_date_id
-            WHERE ead.event_id = :event_id
-        ");
-        $stmt_check_attendance->execute([":event_id" => $event_id]);
-        $attendance_logs_count = (int) $stmt_check_attendance->fetchColumn();
+	if (isset($input['attendance'])) {
+		// Check whether attendance (actual logs) exist for this event
+		$stmt_check_attendance = $pdo->prepare("
+			SELECT COUNT(*) FROM attendance_made am
+			JOIN event_attendance_times eat ON am.event_attend_time_id = eat.event_attend_time_id
+			JOIN event_attendance_dates ead ON eat.event_attend_date_id = ead.event_attend_date_id
+			WHERE ead.event_id = :event_id
+		");
+		$stmt_check_attendance->execute([":event_id" => $event_id]);
+		$attendance_logs_count = (int) $stmt_check_attendance->fetchColumn();
 
-        if ($attendance_logs_count > 0) {
-            throw new Exception("Cannot edit attendance: attendance records already exist for this event.");
-        }
+		if ($attendance_logs_count > 0) {
+			throw new Exception("Cannot edit attendance: attendance records already exist for this event.");
+		}
 
-        // Safe to replace dates/times: delete old then insert new
-        // Delete times linked to this event
-        $pdo->prepare("
-            DELETE eat FROM event_attendance_times eat
-            JOIN event_attendance_dates ead ON eat.event_attend_date_id = ead.event_attend_date_id
-            WHERE ead.event_id = :event_id
-        ")->execute([":event_id" => $event_id]);
+		// Fetch existing attendance structure for this event
+		$stmt_existing = $pdo->prepare("
+			SELECT ead.event_attend_date_id, ead.event_attend_date,
+				   eat.event_attend_time_id, eat.event_attend_time, eat.event_attend_sanction_fee
+			FROM event_attendance_dates ead
+			LEFT JOIN event_attendance_times eat 
+				ON ead.event_attend_date_id = eat.event_attend_date_id
+			WHERE ead.event_id = :event_id
+		");
+		$stmt_existing->execute([":event_id" => $event_id]);
+		$existing = $stmt_existing->fetchAll(PDO::FETCH_ASSOC);
 
-        // Delete dates
-        $pdo->prepare("DELETE FROM event_attendance_dates WHERE event_id = :event_id")->execute([":event_id" => $event_id]);
+		// Build lookup structure
+		$existingDates = [];
+		foreach ($existing as $row) {
+			$date_val = $row['event_attend_date'];
+			if (!isset($existingDates[$date_val])) {
+				$existingDates[$date_val] = [
+					"date_id" => $row['event_attend_date_id'],
+					"times" => []
+				];
+			}
+			if ($row['event_attend_time']) {
+				$existingDates[$date_val]['times'][$row['event_attend_time']] = [
+					"id" => $row['event_attend_time_id'],
+					"fee" => $row['event_attend_sanction_fee']
+				];
+			}
+		}
 
-        // Insert new attendance structure
-        $allowed_time_values = ['AM IN', 'AM OUT', 'PM IN', 'PM OUT'];
-        foreach ($input['attendance'] as $att) {
-            if (empty($att['event_attend_date'])) continue;
-            $stmt_date = $pdo->prepare("INSERT INTO event_attendance_dates (event_attend_date, event_id) VALUES (:date, :event_id)");
-            $stmt_date->execute([":date" => $att['event_attend_date'], ":event_id" => $event_id]);
-            $date_id = $pdo->lastInsertId();
+		$allowed_time_values = ['AM IN', 'AM OUT', 'PM IN', 'PM OUT'];
+		$payloadDates = [];
 
-            // Each time can optionally include event_attend_sanction_fee (if present in the same object)
-            // Expected shape in payload: { "event_attend_date": "...", "event_attend_time": ["AM IN","PM IN"], "event_attend_sanction_fee": 0 }
-            foreach ($att['event_attend_time'] as $time_label) {
-                if (!in_array($time_label, $allowed_time_values)) {
-                    throw new Exception("Invalid event_attend_time value: {$time_label}");
-                }
+		// Process payload
+		foreach ($input['attendance'] as $att) {
+			if (empty($att['event_attend_date'])) continue;
+			$date_val = $att['event_attend_date'];
+			$payloadDates[] = $date_val;
 
-                $stmt_time = $pdo->prepare("
-                    INSERT INTO event_attendance_times (event_attend_time, event_attend_sanction_fee, event_attend_date_id)
-                    VALUES (:time, :sanction_fee, :date_id)
-                ");
-                $stmt_time->execute([
-                    ":time" => $time_label,
-                    ":sanction_fee" => isset($att['event_attend_sanction_fee']) ? $att['event_attend_sanction_fee'] : 0,
-                    ":date_id" => $date_id
-                ]);
-            }
-        }
-    }
+			// Check if date already exists
+			if (isset($existingDates[$date_val])) {
+				$date_id = $existingDates[$date_val]['date_id'];
+			} else {
+				// Insert new date
+				$stmt_date = $pdo->prepare("
+					INSERT INTO event_attendance_dates (event_attend_date, event_id)
+					VALUES (:date, :event_id)
+				");
+				$stmt_date->execute([":date" => $date_val, ":event_id" => $event_id]);
+				$date_id = $pdo->lastInsertId();
+				$existingDates[$date_val] = ["date_id" => $date_id, "times" => []];
+			}
+
+			// Process times for this date
+			$payloadTimes = [];
+			foreach ($att['event_attend_time'] as $time_label) {
+				if (!in_array($time_label, $allowed_time_values)) {
+					throw new Exception("Invalid event_attend_time value: {$time_label}");
+				}
+				$payloadTimes[] = $time_label;
+
+				if (isset($existingDates[$date_val]['times'][$time_label])) {
+					// Already exists → update sanction fee if changed
+					$time_id = $existingDates[$date_val]['times'][$time_label]['id'];
+					$pdo->prepare("
+						UPDATE event_attendance_times
+						SET event_attend_sanction_fee = :fee
+						WHERE event_attend_time_id = :id
+					")->execute([
+						":fee" => $att['event_attend_sanction_fee'] ?? 0,
+						":id" => $time_id
+					]);
+					unset($existingDates[$date_val]['times'][$time_label]); // mark handled
+				} else {
+					// Insert new time
+					$stmt_time = $pdo->prepare("
+						INSERT INTO event_attendance_times (event_attend_time, event_attend_sanction_fee, event_attend_date_id)
+						VALUES (:time, :fee, :date_id)
+					");
+					$stmt_time->execute([
+						":time" => $time_label,
+						":fee" => $att['event_attend_sanction_fee'] ?? 0,
+						":date_id" => $date_id
+					]);
+				}
+			}
+
+			// Delete leftover times (not in payload)
+			foreach ($existingDates[$date_val]['times'] as $old_time => $info) {
+				$pdo->prepare("DELETE FROM event_attendance_times WHERE event_attend_time_id = :id")
+					->execute([":id" => $info['id']]);
+			}
+
+			// Mark date fully handled
+			unset($existingDates[$date_val]);
+		}
+
+		// Delete leftover dates (not in payload)
+		foreach ($existingDates as $date_val => $info) {
+			$pdo->prepare("DELETE FROM event_attendance_dates WHERE event_attend_date_id = :id")
+				->execute([":id" => $info['date_id']]);
+		}
+	}
 
     $pdo->commit();
 
