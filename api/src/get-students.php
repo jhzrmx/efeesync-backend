@@ -6,11 +6,10 @@ header("Content-Type: application/json");
 
 require_role(["admin", "treasurer"]);
 
-$response = [];
-$response["status"] = "error";
+$response = ["status" => "error"];
 
 try {
-    $sql = "SELECT 
+    $baseSql = "SELECT 
             s.student_id, 
             s.student_number_id, 
             s.student_section, 
@@ -37,14 +36,14 @@ try {
 
     $conditions = [];
     $params = [];
-	
-	// student_id filter
+
+    // student_id filter
     if (isset($id)) {
         $conditions[] = "s.student_id = :id";
         $params[":id"] = $id;
     }
-	
-	// student_number_id filter
+
+    // student_number_id filter
     if (isset($student_number)) {
         $conditions[] = "s.student_number_id = :student_number";
         $params[":student_number"] = $student_number;
@@ -63,7 +62,7 @@ try {
     }
 
     // search filter
-    if (isset($search)) {
+    if (isset($_GET["search"])) {
         $conditions[] = "(u.first_name LIKE :search
                         OR u.last_name LIKE :search
                         OR u.middle_initial LIKE :search
@@ -71,23 +70,49 @@ try {
                         OR u.institutional_email LIKE :search
                         OR p.program_code LIKE :search
                         OR d.department_code LIKE :search)";
-        $params[":search"] = "%".$search."%";
+        $params[":search"] = "%".$_GET["search"]."%";
     }
 
     if (!empty($conditions)) {
-        $sql .= " WHERE " . implode(" AND ", $conditions);
+        $baseSql .= " WHERE " . implode(" AND ", $conditions);
     }
 
+    // Pagination setup
+    $page     = isset($_GET["page"]) ? max(1, intval($_GET["page"])) : 1;
+    $per_page = isset($_GET["per_page"]) ? max(1, intval($_GET["per_page"])) : 20;
+    $offset   = ($page - 1) * $per_page;
+
+    // Count total before LIMIT
+    $countSql = "SELECT COUNT(*) FROM ($baseSql) AS total_count";
+    $stmtCount = $pdo->prepare($countSql);
+    foreach ($params as $param => $value) {
+        $stmtCount->bindValue($param, $value);
+    }
+    $stmtCount->execute();
+    $total = (int)$stmtCount->fetchColumn();
+
+    // Final query with LIMIT + OFFSET
+    $sql = $baseSql . " ORDER BY u.last_name, u.first_name LIMIT :offset, :per_page";
     $stmt = $pdo->prepare($sql);
+
     foreach ($params as $param => $value) {
         $stmt->bindValue($param, $value);
     }
+    $stmt->bindValue(":offset", $offset, PDO::PARAM_INT);
+    $stmt->bindValue(":per_page", $per_page, PDO::PARAM_INT);
 
     $stmt->execute();
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $response["status"] = "success";
     $response["data"] = $data;
+    $response["meta"] = [
+        "page" => $page,
+        "per_page" => $per_page,
+        "total" => $total,
+        "total_pages" => ceil($total / $per_page)
+    ];
+
 } catch (Exception $e) {
     http_response_code(500);
     $response["message"] = $e->getMessage();

@@ -98,12 +98,13 @@ Route::put("/organizations/code/:organization_code/events/:id/attendance", "src/
 Route::put("/organizations/code/:organization_code/events/:id/contribution", "src/edit-event-contribution.php");
 Route::delete("/organizations/code/:organization_code/events", "src/delete-event.php");		// Multi delete
 Route::delete("/organizations/code/:organization_code/events/:id", "src/delete-event.php");	// Single delete
+// ATTENDANCE MADE
+Route::get("/organizations/:organization_id/events/:id/attendance/made/:event_attend_date_id", "src/get-event-attendance-made.php"); // Optional query parameter page, per_page, search
 
 // ROUTES: STUDENTS
-Route::get("/students", "src/get-students.php");
+Route::get("/students", "src/get-students.php"); // Optional query parameter page, per_page, search
 Route::get("/students/:id", "src/get-students.php");
 Route::get("/students/number/:student_number", "src/get-students.php");
-Route::get("/students/search/:search", "src/get-students.php");
 Route::post("/students", "src/add-student.php");
 Route::put("/students/:id", "src/edit-student.php");
 Route::delete("/students", "src/delete-student.php");		// Multi delete
