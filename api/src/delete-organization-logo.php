@@ -1,8 +1,8 @@
 <?php
 require_once "_connect_to_database.php";
 require_once "_middleware.php";
-require_once "_upload_dirs.php";
 require_once "_request.php";
+require_once "_upload_dirs.php";
 
 header("Content-Type: application/json");
 

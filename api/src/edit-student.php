@@ -1,26 +1,19 @@
 <?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
-require_once "_generate_email.php";
+require_once "_middleware.php";
+require_once "_request.php";
 
 header("Content-Type: application/json");
 
-if (!is_current_role_in(["admin", "treasurer"])) {
-	http_response_code(403);
-	echo json_encode(["status" => "error", "message" => "Forbidden"]);
-	exit();
-}
+require_role(["admin", "treasurer"]);
 
-$student_id = isset($id) ? $id : null;
-if (!$student_id) {
-	http_response_code(400);
-	echo json_encode(["status" => "error", "message" => "Missing student ID"]);
-	exit();
-}
+$json = json_request_body();
 
-$json = json_decode(file_get_contents("php://input"), true);
+$response = ["status" => "error"];
 
 try {
+	$student_id = isset($id) ? $id : null;
+	if (!$student_id) throw new Exception("Missing student ID");
 	// Get current student and user_id
 	$stmt = $pdo->prepare("SELECT * FROM students WHERE student_id = ?");
 	$stmt->execute([$student_id]);

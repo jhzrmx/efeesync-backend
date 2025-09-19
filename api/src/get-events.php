@@ -1,7 +1,6 @@
 <?php
 require_once "_connect_to_database.php";
 require_once "_middleware.php";
-require_once "_request.php";
 
 header("Content-Type: application/json");
 

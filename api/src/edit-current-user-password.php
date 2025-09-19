@@ -1,30 +1,16 @@
-<?php 
+<?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
-require_once "_snake_to_capital.php";
+require_once "_middleware.php";
+require_once "_request.php";
 
 header("Content-Type: application/json");
 
-if (current_role() == null) {
-	http_response_code(403);
-	echo json_encode(["status" => "error", "message" => "Forbidden"]);
-	exit();
-}
+require_login();
 
-$json_put_data = json_decode(file_get_contents("php://input"), true);
+$json_put_data = json_request_body();
+require_params($json_put_data, ["old_password", "new_password"]);
 
-$required_parameters = ["old_password", "new_password"];
-
-foreach ($required_parameters as $param) {
-	if (empty($json_put_data[$param])) {
-		http_response_code(400);
-		echo json_encode(["status" => "error", "message" => snake_to_capital($param)." is required"]);
-		exit();
-	}
-}
-
-$response = [];
-$response["status"] = "error";
+$response = ["status" => "error"];
 
 if($json_put_data["old_password"] == $json_put_data["new_password"]) {
 	echo json_encode(["status" => "error", "New password is the same as old password"]);

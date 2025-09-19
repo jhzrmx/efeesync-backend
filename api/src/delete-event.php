@@ -10,10 +10,8 @@ require_role("treasurer");
 $response = ["status" => "error"];
 
 try {
-    if (!isset($organization_id)) {
-        throw new Exception("Missing organization identifier in URL.");
-    }
-
+    if (!isset($organization_id)) throw new Exception("Missing organization identifier in URL.");
+	
     $deleted = 0;
 
     if (isset($event_id)) {

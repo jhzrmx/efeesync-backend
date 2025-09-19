@@ -1,17 +1,12 @@
-<?php 
+<?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
+require_once "_middleware.php";
 
 header("Content-Type: application/json");
 
-if (current_role() == null) {
-	http_response_code(403);
-	echo json_encode(["status" => "error", "message" => "Forbidden"]);
-	exit();
-}
+require_login();
 
-$response = [];
-$response["status"] = "error";
+$response = ["status" => "error"];
 
 try {
 	$stmt = $pdo->prepare("SELECT * from `roles`");

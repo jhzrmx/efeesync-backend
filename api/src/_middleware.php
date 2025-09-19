@@ -1,7 +1,7 @@
 <?php
 require_once "_current_role.php";
 
-function require_role(array|string $roles) {
+function require_role($roles) {
     if (!is_current_role_in($roles)) {
         http_response_code(403);
         echo json_encode([

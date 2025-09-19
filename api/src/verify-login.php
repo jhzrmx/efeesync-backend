@@ -3,9 +3,7 @@ require_once "./libs/JWTHandler.php";
 
 header("Content-Type: application/json");
 
-$response = [];
-
-$response["status"] = "error";
+$response = ["status" => "error"];
 
 $login_token = empty($_COOKIE["basta"]) ? "" : trim($_COOKIE["basta"]);
 

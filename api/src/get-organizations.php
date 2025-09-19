@@ -1,17 +1,12 @@
-<?php 
+<?php
 require_once "_connect_to_database.php";
-require_once "_current_role.php";
+require_once "_middleware.php";
 
 header("Content-Type: application/json");
 
-if (current_role() == null) {
-	http_response_code(403);
-	echo json_encode(["status" => "error", "message" => "Forbidden"]);
-	exit();
-}
+require_login();
 
-$response = [];
-$response["status"] = "error";
+$response = ["status" => "error"];
 
 try {
 	$sql = "SELECT `organization_id`, `organization_code`, `organization_name`, `organization_logo`, `organizations`.`department_id`, `department_code` FROM `organizations` LEFT JOIN `departments` ON `departments`.`department_id` = `organizations`.`department_id`";
