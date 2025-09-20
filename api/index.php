@@ -99,6 +99,7 @@ Route::put("/organizations/code/:organization_code/events/:id/contribution", "sr
 Route::delete("/organizations/code/:organization_code/events", "src/delete-event.php");		// Multi delete
 Route::delete("/organizations/code/:organization_code/events/:id", "src/delete-event.php");	// Single delete
 
+// ROUTE: EVENT > ATTENDANCES
 // ATTENDANCE MADE
 Route::get("/events/:id/attendance/made/:event_attend_date_id", "src/get-event-attendance-made.php"); // Optional query parameter: page, per_page, search
 Route::get("/events/:id/attendance/made/:date", "src/get-event-attendance-made.php");
@@ -106,6 +107,7 @@ Route::get("/events/:id/attendance/made/:date", "src/get-event-attendance-made.p
 Route::post("/events/:id/attendance/:date/:time/:student_id", "src/add-attendance.php");
 Route::post("/events/:id/attendance/:date/:time/number/:student_number_id", "src/add-attendance.php");
 
+// ROUTE: EVENT > CONTRIBUTIONS
 // CONTRIBUTIONS
 Route::get("/events/:id/contributions", "src/get-event-contributions.php"); // Optional query parameter: page, per_page, search
 // ADD CONTRIBUTION
@@ -126,6 +128,10 @@ Route::get("/departments/:department_id/students", "src/get-students.php");
 Route::get("/departments/:department_id/students/search/:search", "src/get-students.php");
 Route::get("/departments/code/:department_code/students", "src/get-students.php");
 Route::get("/departments/code/:department_code/students/search/:search", "src/get-students.php");
+
+// ROUTE: NOTIFICATIONS
+Route::get("/notifications", "src/notifications-sse.php");
+Route::post("/notifications/:id", "src/notifications-read.php");
 
 // ROUTE: 404
 Route::add404("src/not-found.php");
