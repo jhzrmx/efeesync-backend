@@ -278,13 +278,13 @@ INSERT INTO `roles` (`role_id`, `role_name`) VALUES
 
 -- Passwords were all 111
 INSERT INTO `users` (`user_id`, `institutional_email`, `password`, `role_id`, `last_name`, `first_name`, `middle_initial`, `picture`) VALUES
-(100001,	'admin@cbsua.edu.ph',	'$2y$10$BO3FUTiAZXv7nMhNn7DSu.NIAcMm4UsIpVVyJ5A4CTj90HmRkx4N2',	101,	'ADMIN LAST NAME',	'ADMIN FIRST NAME',	'MI',	'default.jpg'),
+(100001,	'admin@cbsua.edu.ph',	'$2y$10$BO3FUTiAZXv7nMhNn7DSu.NIAcMm4UsIpVVyJ5A4CTj90HmRkx4N2',	101,	'OSAS',	'ADMIN',	'MI',	'default.jpg'),
 (100002,	'cit.treasurer@cbsua.edu.ph',	'$2y$10$cRnaAYqfwT2xur7J20ig1up2e87iAQ8QK7oR2n.GNvDBW2M48vxQi',	102,	'TREASURER',	'CIT',	'MI',	'default.jpg'),
 (100003,	'cit.student@cbsua.edu.ph',	'$2y$10$eeWzE7/NH6eSsIeTax2iJucBR52Ct8pUxGzRdxP1NC7.zw/W3Bbj2',	102,	'STUDENT ',	'CIT',	'MI',	'default.jpg'),
 (100004,	'cot.treasurer@cbsua.edu.ph',	'$2y$10$XzngyZHNNYOPEQL0zuvO3OWIMBbaGv8CDoyJUvBvwJ3L9bn4wFaaC',	102,	'TREASURER',	'COT',	'MI',	'default.jpg'),
 (100005,	'cot.student@cbsua.edu.ph',	'$2y$10$OIpyQM94jo0M8XGtfpOsvOSpjBwZI.lD4SChiPt9.lZOgoCy5TcXO',	102,	'STUDENT ',	'COT',	'MI',	'default.jpg'),
 (100006,	'coc.treasurer@cbsua.edu.ph',	'$2y$10$cf59TOBvHHRKYSHSjs213u1F/1v0Keqhm5hiZB1A3ERhIKlSfo4s.',	102,	'TREASURER',	'COC',	'MI',	'default.jpg'),
-(100007,	'coc.student@cbsua.edu.ph',	'$2y$10$ToUr5Viy8PFbcGEAXDuokeGDdp4J6X/cq6NBanRFIhzUSc0nhfsey',	102,	'STUDENT ',	'COc',	'MI',	'default.jpg'),
+(100007,	'coc.student@cbsua.edu.ph',	'$2y$10$ToUr5Viy8PFbcGEAXDuokeGDdp4J6X/cq6NBanRFIhzUSc0nhfsey',	102,	'STUDENT ',	'COC',	'MI',	'default.jpg'),
 (100008,	'coe.treasurer@cbsua.edu.ph',	'$2y$10$QiA2aUtq1XKO17FjtEmVO./ScNI4PKe0UVPqDoRFrSIwltKu7rzyy',	102,	'TREASURER',	'COE',	'MI',	'default.jpg'),
 (100009,	'coe.student@cbsua.edu.ph',	'$2y$10$QhQyQOsX7XOBq8/.VvaOy.V9HO0CTnidoFwBA6IwEc6Kpd7sLlLrK',	102,	'STUDENT ',	'COE',	'MI',	'default.jpg'),
 (100010,	'esaf.treasurer@cbsua.edu.ph',	'$2y$10$luz2U150SZHquZ7WqZD8JOAOpp1J4GTpYc3agS5lnr4cF9rhebhoC',	102,	'TREASURER',	'ESAF',	'MI',	'default.jpg'),
