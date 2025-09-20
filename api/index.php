@@ -101,12 +101,13 @@ Route::delete("/organizations/code/:organization_code/events/:id", "src/delete-e
 
 // ATTENDANCE MADE
 Route::get("/events/:id/attendance/made/:event_attend_date_id", "src/get-event-attendance-made.php"); // Optional query parameter: page, per_page, search
+Route::get("/events/:id/attendance/made/:date", "src/get-event-attendance-made.php");
 // ADD ATTENDANCE
 Route::post("/events/:id/attendance/:date/:time/:student_id", "src/add-attendance.php");
 Route::post("/events/:id/attendance/:date/:time/number/:student_number_id", "src/add-attendance.php");
 
 // CONTRIBUTIONS
-Route::get("/organizations/:organization_id/events/:id/contributions", "src/get-event-contributions.php"); // Optional query parameter: page, per_page, search
+Route::get("/events/:id/contributions", "src/get-event-contributions.php"); // Optional query parameter: page, per_page, search
 
 // ROUTES: STUDENTS
 Route::get("/students", "src/get-students.php"); // Optional query parameter: page, per_page, search

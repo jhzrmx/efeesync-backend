@@ -9,9 +9,34 @@ $response = ["status" => "error"];
 
 try {
     // Router params
-    if (!isset($id) || !isset($event_attend_date_id)) {
-        throw new Exception("Missing route parameters.");
-    }
+	if (!isset($id)) throw new Exception("Missing event id.");
+
+	$event_id = intval($id);
+
+	if (isset($event_attend_date_id)) {
+		// Use event_attend_date_id directly
+		$stmt = $pdo->prepare("
+			SELECT event_attend_date_id, event_attend_date 
+			FROM event_attendance_dates 
+			WHERE event_attend_date_id = :date_id AND event_id = :event_id
+		");
+		$stmt->execute([":date_id" => $event_attend_date_id, ":event_id" => $event_id]);
+		$dateRow = $stmt->fetch(PDO::FETCH_ASSOC);
+		if (!$dateRow) throw new Exception("Attendance date not found for event.");
+	} elseif (isset($date)) {
+		// Convert YYYY-MM-DD → event_attend_date_id
+		$stmt = $pdo->prepare("
+			SELECT event_attend_date_id, event_attend_date 
+			FROM event_attendance_dates 
+			WHERE event_attend_date = :date AND event_id = :event_id
+		");
+		$stmt->execute([":date" => $date, ":event_id" => $event_id]);
+		$dateRow = $stmt->fetch(PDO::FETCH_ASSOC);
+		if (!$dateRow) throw new Exception("Attendance date not found for event.");
+		$event_attend_date_id = $dateRow["event_attend_date_id"];
+	} else {
+		throw new Exception("Either event_attend_date_id or date must be provided.");
+	}
 
     $event_id = intval($id);
     $date_id  = intval($event_attend_date_id);

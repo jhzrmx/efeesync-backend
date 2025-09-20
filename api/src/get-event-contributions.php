@@ -8,10 +8,30 @@ require_role(["admin", "treasurer"]);
 $response = ["status" => "error"];
 
 try {
-    if (!isset($organization_id) || !isset($id)) {
-        throw new Exception("Organization ID and Event ID are required.");
+    if (!isset($id)) {
+        throw new Exception("Event ID is required.");
     }
 
+    // --- Get event info (so we can filter by target year levels) ---
+    $stmt = $pdo->prepare("
+        SELECT e.event_id, e.event_target_year_levels, d.department_id
+        FROM events e
+        JOIN organizations o ON o.organization_id = e.organization_id
+        JOIN departments d ON d.department_id = o.department_id
+        WHERE e.event_id = :event_id
+    ");
+    $stmt->execute([":event_id" => $id]);
+    $event = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$event) throw new Exception("Event not found.");
+
+    $targetYears = [];
+    if (!empty($event["event_target_year_levels"])) {
+        // Assume it's stored like "1,2,3" or "1|2|3"
+        $targetYears = preg_split("/[,\|]/", $event["event_target_year_levels"]);
+        $targetYears = array_map("trim", $targetYears);
+    }
+
+    // ---- Base SQL ----
     $baseSql = "
         SELECT 
             s.student_id,
@@ -28,17 +48,30 @@ try {
         JOIN users u ON u.user_id = s.user_id
         JOIN programs pr ON pr.program_id = s.student_current_program
         JOIN departments d ON d.department_id = pr.department_id
-        JOIN organizations o ON o.organization_id = d.organization_id
         JOIN event_contributions ec ON ec.event_id = :event_id
         LEFT JOIN event_contribution_payments p 
             ON p.student_id = s.student_id 
            AND p.event_id = ec.event_id
-        WHERE o.organization_id = :org_id
+        WHERE d.department_id = :dept_id
     ";
 
     // ---- Filters ----
     $conditions = [];
-    $params = [":org_id" => $organization_id, ":event_id" => $id];
+    $params = [
+        ":event_id" => $id,
+        ":dept_id"  => $event["department_id"]
+    ];
+
+    // Filter by event target year levels
+    if (!empty($targetYears)) {
+        $placeholders = [];
+        foreach ($targetYears as $i => $year) {
+            $ph = ":year" . $i;
+            $placeholders[] = "LEFT(s.student_section,1) = $ph";
+            $params[$ph] = $year;
+        }
+        $conditions[] = "(" . implode(" OR ", $placeholders) . ")";
+    }
 
     if (isset($_GET["student_id"])) {
         $conditions[] = "s.student_id = :student_id";
