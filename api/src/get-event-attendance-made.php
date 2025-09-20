@@ -9,11 +9,10 @@ $response = ["status" => "error"];
 
 try {
     // Router params
-    if (!isset($organization_id) || !isset($id) || !isset($event_attend_date_id)) {
+    if (!isset($id) || !isset($event_attend_date_id)) {
         throw new Exception("Missing route parameters.");
     }
 
-    $org_id  = intval($organization_id);
     $event_id = intval($id);
     $date_id  = intval($event_attend_date_id);
 
@@ -24,16 +23,15 @@ try {
     $offset   = ($page - 1) * $per_page;
 
     // --- VALIDATIONS ---
-    $stmt = $pdo->prepare("SELECT organization_id, department_id FROM organizations WHERE organization_id = :org_id");
-    $stmt->execute([":org_id" => $org_id]);
-    $org = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$org) throw new Exception("Organization not found.");
+    $stmt = $pdo->prepare("SELECT organization_id, department_id, event_target_year_levels 
+                           FROM events WHERE event_id = :event_id");
+    $stmt->execute([":event_id" => $event_id]);
+    $event = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$event) throw new Exception("Event not found.");
 
-    $stmt = $pdo->prepare("SELECT event_id FROM events WHERE event_id = :event_id AND organization_id = :org_id");
-    $stmt->execute([":event_id" => $event_id, ":org_id" => $org_id]);
-    if (!$stmt->fetch(PDO::FETCH_ASSOC)) throw new Exception("Event not found for organization.");
-
-    $stmt = $pdo->prepare("SELECT event_attend_date FROM event_attendance_dates WHERE event_attend_date_id = :date_id AND event_id = :event_id");
+    $stmt = $pdo->prepare("SELECT event_attend_date 
+                           FROM event_attendance_dates 
+                           WHERE event_attend_date_id = :date_id AND event_id = :event_id");
     $stmt->execute([":date_id" => $date_id, ":event_id" => $event_id]);
     $dateRow = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$dateRow) throw new Exception("Attendance date not found for event.");
@@ -103,11 +101,22 @@ try {
     // Student filter condition
     $whereSearch = "";
     if ($search !== "") {
-        $whereSearch = " AND (u.first_name LIKE :search OR u.last_name LIKE :search OR s.student_number_id LIKE :search)";
+        $whereSearch = " AND (u.first_name LIKE :search 
+                           OR u.last_name LIKE :search 
+                           OR s.student_number_id LIKE :search)";
         $params[":search"] = "%$search%";
     }
 
-    if (!empty($org['department_id'])) {
+    // --- Year level filter ---
+    $yearFilter = "";
+    if (!empty($event['event_target_year_levels'])) {
+        // Example stored as: "1,2,3" → filter students whose LEFT(student_section,1) is in this list
+        $yearLevels = array_map('trim', explode(",", $event['event_target_year_levels']));
+        $inYears = implode(",", array_map("intval", $yearLevels));
+        $yearFilter = " AND LEFT(s.student_section,1) IN ($inYears)";
+    }
+
+    if (!empty($event['department_id'])) {
         $sql = "
             SELECT SQL_CALC_FOUND_ROWS
                    s.student_id,
@@ -117,11 +126,11 @@ try {
             FROM students s
             JOIN users u ON s.user_id = u.user_id
             JOIN programs p ON s.student_current_program = p.program_id
-            WHERE p.department_id = :dept_id $whereSearch
+            WHERE p.department_id = :dept_id $yearFilter $whereSearch
             ORDER BY u.last_name, u.first_name
             LIMIT :offset, :per_page
         ";
-        $params[":dept_id"] = $org['department_id'];
+        $params[":dept_id"] = $event['department_id'];
     } else {
         $sql = "
             SELECT SQL_CALC_FOUND_ROWS
@@ -131,7 +140,7 @@ try {
                    $dynamicCols
             FROM students s
             JOIN users u ON s.user_id = u.user_id
-            WHERE 1=1 $whereSearch
+            WHERE 1=1 $yearFilter $whereSearch
             ORDER BY u.last_name, u.first_name
             LIMIT :offset, :per_page
         ";
