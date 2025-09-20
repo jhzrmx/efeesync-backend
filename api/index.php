@@ -108,6 +108,9 @@ Route::post("/events/:id/attendance/:date/:time/number/:student_number_id", "src
 
 // CONTRIBUTIONS
 Route::get("/events/:id/contributions", "src/get-event-contributions.php"); // Optional query parameter: page, per_page, search
+// ADD CONTRIBUTIONS
+Route::post("/events/:id/contributions/:student_id", "src/add-contribution.php");
+Route::post("/events/:id/contributions/number/:student_number_id", "src/add-contribution.php");
 
 // ROUTES: STUDENTS
 Route::get("/students", "src/get-students.php"); // Optional query parameter: page, per_page, search

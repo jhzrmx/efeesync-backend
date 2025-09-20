@@ -165,7 +165,7 @@ CREATE TABLE contributions_made (
     event_contri_id INT NOT NULL,
     student_id INT NOT NULL,
     paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
-    payment_type VARCHAR(20),
+    payment_type VARCHAR(20) DEFAULT 'CASH',
     online_payment_proof VARCHAR(255),
     paid_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (event_contri_id) REFERENCES event_contributions(event_contri_id)
