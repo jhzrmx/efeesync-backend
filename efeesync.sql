@@ -312,7 +312,7 @@ INSERT INTO `organizations` (`organization_id`, `organization_code`, `organizati
 (1002,	'COTSC',	'College of Industrial Technology Student Council',	'default.jpg', 1002),
 (1003,	'CCSC',	'College of Criminology Student Council',	'default.jpg', 1003),
 (1004,	'CESC',	'College of Education Student Council',	'default.jpg',	1004),
-(1005,	'ESAF',	'Student Council of Environmental Science and Agroforestry Program', 'default.jpg',	1005),
+(1005,	'SCEAP',	'Student Council of Environmental Science and Agroforestry Program', 'default.jpg',	1005),
 (1006,	'SSC',	'Supreme Student Council',	'default.jpg', NULL);
 
 INSERT INTO `students` (`student_id`, `student_number_id`, `user_id`, `student_section`, `student_current_program`) VALUES

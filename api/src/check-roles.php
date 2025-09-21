@@ -67,10 +67,11 @@ try {
 		}
 		
 		$stmt = $pdo->prepare("
-			SELECT o.organization_code, oo.designation
+			SELECT o.organization_code, d.department_code, oo.designation
 			FROM students s
 			JOIN organization_officers oo ON s.student_id = oo.student_id
 			JOIN organizations o ON oo.organization_id = o.organization_id
+			LEFT JOIN departments d on o.department_id = d.department_id
 			WHERE s.user_id = :user_id
 			LIMIT 1
 		");
@@ -80,6 +81,7 @@ try {
 		if ($officer) {
 			$response["roles"][] = [
 				"role_name"        => strtolower($officer["designation"]),
+				"department_code"  => $officer["department_code"],
 				"organization_code"=> $officer["organization_code"]
 			];
 		}

@@ -14,8 +14,9 @@ if (current_role()) {
 		"status"  => "success",
 		"message" => "You're already logged in",
 		"data"    => [
-			"current_user_id" => current_jwt_payload()["user_id"],
-			"current_role"    => current_jwt_payload()["role"]
+			"current_user_id"	=> current_jwt_payload()["user_id"],
+			"current_dept_code"	=> current_jwt_payload()["dept_code"],
+			"current_role"		=> current_jwt_payload()["role"]
 		]
 	]);
 	exit();
@@ -70,18 +71,19 @@ try {
 
 		if ($student) {
 			$roles[] = [
-				"role_name"       => "student",
-				"department_code" => $student["department_code"],
+				"role_name"         => "student",
+				"department_code"   => $student["department_code"],
 				"organization_code" => $student["organization_code"]
 			];
 		}
 
 		// Org officer roles
 		$stmt = $pdo->prepare("
-			SELECT o.organization_code, oo.designation
+			SELECT o.organization_code, d.department_code, oo.designation
 			FROM students s
 			JOIN organization_officers oo ON s.student_id = oo.student_id
 			JOIN organizations o ON oo.organization_id = o.organization_id
+			LEFT JOIN departments d on o.department_id = d.department_id
 			WHERE s.user_id = :user_id
 		");
 		$stmt->execute([":user_id" => $user["user_id"]]);
@@ -89,8 +91,9 @@ try {
 
 		foreach ($officers as $officer) {
 			$roles[] = [
-				"role_name"        => strtolower($officer["designation"]),
-				"organization_code"=> $officer["organization_code"]
+				"role_name"         => strtolower($officer["designation"]),
+				"department_code"   => $officer["department_code"],
+				"organization_code" => $officer["organization_code"]
 			];
 		}
 	}
@@ -129,10 +132,11 @@ try {
 	// Create JWT
 	$jwt = new JWTHandler($_ENV["EFEESYNC_JWT_SECRET"]);
 	$payload = [
-		"user_id" => $user["user_id"],
-		"role"    => $activeRole["role_name"],
-		"exp"     => time() + (3600 * 24 * 15), // 15 days
-		"nbf"     => time(),
+		"user_id" 	=> $user["user_id"],
+		"role"    	=> $activeRole["role_name"],
+		"dept_code"	=> $activeRole["department_code"],
+		"exp"		=> time() + (3600 * 24 * 15), // 15 days
+		"nbf"		=> time(),
 	];
 	$token = $jwt->createToken($payload);
 
