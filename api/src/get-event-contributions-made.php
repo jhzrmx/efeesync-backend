@@ -102,10 +102,10 @@ try {
     $countSql = "SELECT COUNT(*) FROM (" . $baseSql . ") AS total_count";
     $stmtCount = $pdo->prepare($countSql);
     $stmtCount->execute($params);
-    $totalRows = $stmtCount->fetchColumn();
+    $total = $stmtCount->fetchColumn();
 
     // ---- Pagination ----
-    $limit = isset($_GET["limit"]) ? max(1, (int)$_GET["limit"]) : 10;
+    $limit = isset($_GET["per_page"]) ? max(1, (int)$_GET["per_page"]) : 10;
     $page  = isset($_GET["page"]) ? max(1, (int)$_GET["page"]) : 1;
     $offset = ($page - 1) * $limit;
 
@@ -122,11 +122,13 @@ try {
     $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     $response["status"] = "success";
-    $response["page"] = $page;
-    $response["limit"] = $limit;
-    $response["total_rows"] = $totalRows;
-    $response["total_pages"] = ceil($totalRows / $limit);
-    $response["data"] = $students;
+	$response["data"] = $students;
+	$response["meta"] = [
+        "page" => $page,
+        "per_page" => $limit,
+        "total" => (int)$total,
+        "total_pages" => ceil($total / $per_page)
+    ];
 
 } catch (Exception $e) {
     http_response_code(500);

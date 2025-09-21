@@ -37,8 +37,13 @@ try {
 	$stmt->execute([":email" => $email]);
 	$user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-	if (!$user || !password_verify($password, $user["password"])) {
-		echo json_encode(["status" => "error", "message" => "Invalid credentials"]);
+	if (!$user) {
+		echo json_encode(["status" => "error", "message" => "User not found"]);
+		exit();
+	}
+	
+	if (!password_verify($password, $user["password"])) {
+		echo json_encode(["status" => "error", "message" => "Wrong password"]);
 		exit();
 	}
 
@@ -52,10 +57,11 @@ try {
 	} elseif ($user["role_name"] === "student") {
 		// Base student role with department_code
 		$stmt = $pdo->prepare("
-			SELECT d.department_code
+			SELECT d.department_code, o.organization_code
 			FROM students s
 			JOIN programs p ON s.student_current_program = p.program_id
 			JOIN departments d ON p.department_id = d.department_id
+			LEFT JOIN organizations o ON d.department_id = o.department_id
 			WHERE s.user_id = :user_id
 			LIMIT 1
 		");
@@ -65,7 +71,8 @@ try {
 		if ($student) {
 			$roles[] = [
 				"role_name"       => "student",
-				"department_code" => $student["department_code"]
+				"department_code" => $student["department_code"],
+				"organization_code" => $student["organization_code"]
 			];
 		}
 
