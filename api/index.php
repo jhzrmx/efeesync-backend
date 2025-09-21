@@ -122,6 +122,9 @@ Route::post("/students", "src/add-student.php");
 Route::put("/students/:id", "src/edit-student.php");
 Route::delete("/students", "src/delete-student.php");		// Multi delete
 Route::delete("/students/:id", "src/delete-student.php");	// Single delete
+// STUDENT SHIFT
+Route::post("/students/:id/shift", "src/shift-student.php");
+Route::post("/students/number/:student_number/shift", "src/shift-student.php");
 
 // ROUTES: DEPARTMENT > STUDENTS
 Route::get("/departments/:department_id/students", "src/get-students.php");
@@ -130,7 +133,7 @@ Route::get("/departments/code/:department_code/students", "src/get-students.php"
 Route::get("/departments/code/:department_code/students/search/:search", "src/get-students.php");
 
 // ROUTE: NOTIFICATIONS
-Route::get("/notifications", "src/notifications-sse.php");
+Route::get("/notifications", "src/notifications-sse.php"); // SSE Route
 Route::post("/notifications/:id", "src/notifications-read.php");
 
 // ROUTE: 404

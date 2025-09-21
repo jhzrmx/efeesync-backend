@@ -15,7 +15,7 @@ if (!isset($id)) {
 
 $stmt = $pdo->prepare("UPDATE notifications SET notification_read = 1 WHERE notification_id = :id AND user_id = :user_id");
 $stmt->execute([
-    ":id" => $_POST["notification_id"],
+    ":id" => $id,
     ":user_id" => $user_id
 ]);
 
