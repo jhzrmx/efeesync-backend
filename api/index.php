@@ -45,6 +45,7 @@ Route::delete("/users/picture/:id", "src/delete-user-picture.php");
 
 // ROUTES: DASHBOARD DATA
 Route::get("/admin/dashboard", "src/get-admin-dashboard.php");
+Route::get("/treasurer/dashboard", "src/get-treasurer-dashboard.php");
 
 // ROUTES: DEPARTMENTS
 Route::get("/departments", "src/get-departments.php");

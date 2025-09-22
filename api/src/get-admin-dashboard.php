@@ -7,8 +7,7 @@ header("Content-Type: application/json");
 
 require_role("admin");
 
-$response = [];
-$response["status"] = "error";
+$response = ["status" => "error"];
 
 try {
 	$stmt = $pdo->prepare("
@@ -72,6 +71,7 @@ try {
 	$response["data"]["sanctions_collected_per_org"] = $data_sanctions;
 	$response["data"]["total_population_per_department"] = $data_students;
 } catch (Exception $e) {
+	http_response_code(400);
 	$response["message"] = $e->getMessage();
 }
 

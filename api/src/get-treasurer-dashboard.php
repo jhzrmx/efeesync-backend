@@ -5,74 +5,97 @@ require_once "_request.php";
 
 header("Content-Type: application/json");
 
-require_role("admin");
+require_role("treasurer");
 
-$response = [];
-$response["status"] = "error";
+$response = ["status" => "error"];
 
 try {
-	$stmt = $pdo->prepare("
-		SELECT 
-	    (SELECT COUNT(*) FROM departments) AS `total_departments`,
-	    (SELECT COUNT(*) FROM organizations) AS `total_organizations`,
-	    (SELECT COUNT(*) FROM programs) AS `total_programs`,
-	    (SELECT COUNT(*) FROM students) AS `total_students`,
-	    ((SELECT COALESCE(SUM(paid_sanction_amount), 0) FROM paid_attendance_sanctions) + (SELECT COALESCE(SUM(paid_sanction_amount), 0) FROM paid_contribution_sanctions)) AS `total_sanctions_collected`
-	");
-	$stmt->execute();
-	$data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $current_dept_code = current_jwt_payload()['dept_code'];
+    $params = [":dept_code" => $current_dept_code];
 
-	$stmt_sanctions_per_org = $pdo->prepare("
-		SELECT 
-			o.organization_id,
-			o.organization_code,
-			o.organization_name,
-			COALESCE(SUM(a.total_attendance_sanctions), 0) 
-			  + COALESCE(SUM(c.total_contribution_sanctions), 0) AS total_sanctions_collected
-		FROM organizations o
-		LEFT JOIN (
-			SELECT e.organization_id, 
-				   SUM(pas.paid_sanction_amount) AS total_attendance_sanctions
-			FROM paid_attendance_sanctions pas
-			JOIN event_attendance_times eat ON pas.event_attend_time_id = eat.event_attend_time_id
-			JOIN event_attendance_dates ead ON eat.event_attend_date_id = ead.event_attend_date_id
-			JOIN events e ON ead.event_id = e.event_id
-			GROUP BY e.organization_id
-		) a ON a.organization_id = o.organization_id
-		LEFT JOIN (
-			SELECT e.organization_id, 
-				   SUM(pcs.paid_sanction_amount) AS total_contribution_sanctions
-			FROM paid_contribution_sanctions pcs
-			JOIN event_contributions ec ON pcs.event_contri_id = ec.event_contri_id
-			JOIN events e ON ec.event_id = e.event_id
-			GROUP BY e.organization_id
-		) c ON c.organization_id = o.organization_id
-		GROUP BY o.organization_id, o.organization_code, o.organization_name
-		ORDER BY total_sanctions_collected DESC;
-	");
-	$stmt_sanctions_per_org->execute();
-	$data_sanctions = $stmt_sanctions_per_org->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare("
+        WITH 
+        event_count AS (
+            SELECT COUNT(*) AS total_events
+            FROM events e
+            JOIN organizations o ON e.organization_id = o.organization_id
+            JOIN departments d ON o.department_id = d.department_id
+            WHERE (:dept_code IS NULL OR d.department_code = :dept_code)
+        ),
+        student_count AS (
+            SELECT COUNT(*) AS total_students
+            FROM students s
+            JOIN programs p ON s.student_current_program = p.program_id
+            JOIN departments d ON p.department_id = d.department_id
+            WHERE (:dept_code IS NULL OR d.department_code = :dept_code)
+        ),
+        fees_collected AS (
+            SELECT COALESCE(SUM(cm.paid_amount),0) AS total_fees_collected
+            FROM contributions_made cm
+            JOIN event_contributions ec ON cm.event_contri_id = ec.event_contri_id
+            JOIN events e ON ec.event_id = e.event_id
+            JOIN organizations o ON e.organization_id = o.organization_id
+            JOIN departments d ON o.department_id = d.department_id
+            WHERE (:dept_code IS NULL OR d.department_code = :dept_code)
+        ),
+        sanctions_collected AS (
+            SELECT 
+              COALESCE((
+                SELECT SUM(pcs.paid_sanction_amount)
+                FROM paid_contribution_sanctions pcs
+                JOIN event_contributions ec ON pcs.event_contri_id = ec.event_contri_id
+                JOIN events e ON ec.event_id = e.event_id
+                JOIN organizations o ON e.organization_id = o.organization_id
+                JOIN departments d ON o.department_id = d.department_id
+                WHERE (:dept_code IS NULL OR d.department_code = :dept_code)
+              ),0)
+              +
+              COALESCE((
+                SELECT SUM(pas.paid_sanction_amount)
+                FROM paid_attendance_sanctions pas
+                JOIN event_attendance_times eat ON pas.event_attend_time_id = eat.event_attend_time_id
+                JOIN event_attendance_dates ead ON eat.event_attend_date_id = ead.event_attend_date_id
+                JOIN events e ON ead.event_id = e.event_id
+                JOIN organizations o ON e.organization_id = o.organization_id
+                JOIN departments d ON o.department_id = d.department_id
+                WHERE (:dept_code IS NULL OR d.department_code = :dept_code)
+              ),0) AS total_sanctions_collected
+        ),
+        student_summary AS (
+            SELECT 
+              SUM(CASE WHEN LEFT(s.student_section, 1) = '1' THEN 1 ELSE 0 END) AS total_first_year,
+              SUM(CASE WHEN LEFT(s.student_section, 1) = '2' THEN 1 ELSE 0 END) AS total_second_year,
+              SUM(CASE WHEN LEFT(s.student_section, 1) = '3' THEN 1 ELSE 0 END) AS total_third_year,
+              SUM(CASE WHEN LEFT(s.student_section, 1) = '4' THEN 1 ELSE 0 END) AS total_fourth_year
+            FROM students s
+            JOIN programs p ON s.student_current_program = p.program_id
+            JOIN departments d ON p.department_id = d.department_id
+            WHERE (:dept_code IS NULL OR d.department_code = :dept_code)
+        )
+        SELECT 
+          e.total_events,
+          st.total_students,
+          f.total_fees_collected,
+          sn.total_sanctions_collected,
+          ss.total_first_year,
+          ss.total_second_year,
+          ss.total_third_year,
+          ss.total_fourth_year
+        FROM event_count e
+        CROSS JOIN student_count st
+        CROSS JOIN fees_collected f
+        CROSS JOIN sanctions_collected sn
+        CROSS JOIN student_summary ss;
+    ");
+    $stmt->execute($params);
+    $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-	$stmt_total_students_per_dept = $pdo->prepare("
-		SELECT 
-		    d.department_code,
-		    d.department_name,
-		    COUNT(s.student_id) AS total_students
-		FROM departments d
-		LEFT JOIN programs p ON d.department_id = p.department_id
-		LEFT JOIN students s ON s.student_current_program = p.program_id
-		GROUP BY d.department_id, d.department_code, d.department_name
-		ORDER BY total_students DESC;
-	");
-	$stmt_total_students_per_dept->execute();
-	$data_students = $stmt_total_students_per_dept->fetchAll(PDO::FETCH_ASSOC);
+    $response["status"] = "success";
+    $response["data"] = $data;
 
-	$response["status"] = "success";
-	$response["data"] = $data[0];
-	$response["data"]["sanctions_collected_per_org"] = $data_sanctions;
-	$response["data"]["total_population_per_department"] = $data_students;
 } catch (Exception $e) {
-	$response["message"] = $e->getMessage();
+	http_response_code(400);
+    $response["message"] = $e->getMessage();
 }
 
 echo json_encode($response);
