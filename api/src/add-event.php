@@ -59,6 +59,9 @@ try {
                 (event_id, event_contri_due_date, event_contri_fee, event_contri_sanction_fee) 
             VALUES (?, ?, ?, ?)
         ");
+		if (empty($c["event_contri_due_date"])) {
+			$c["event_contri_due_date"] = $json_post_data["event_start_date"];
+		}
         $stmt_contri->execute([
             $event_id,
             $c["event_contri_due_date"],

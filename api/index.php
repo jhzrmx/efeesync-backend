@@ -45,7 +45,7 @@ Route::delete("/users/picture/:id", "src/delete-user-picture.php");
 
 // ROUTES: DASHBOARD DATA
 Route::get("/admin/dashboard", "src/get-admin-dashboard.php");
-Route::get("/treasurer/dashboard", "src/get-treasurer-dashboard.php");
+Route::get("/treasurer/dashboard", "src/get-organization-dashboard.php");
 
 // ROUTES: DEPARTMENTS
 Route::get("/departments", "src/get-departments.php");
@@ -100,7 +100,11 @@ Route::put("/organizations/code/:organization_code/events/:id/contribution", "sr
 Route::delete("/organizations/code/:organization_code/events", "src/delete-event.php");		// Multi delete
 Route::delete("/organizations/code/:organization_code/events/:id", "src/delete-event.php");	// Single delete
 
-// ROUTE: EVENT > ATTENDANCES
+// ROUTES: ORGANIZATION > SANCTIONS OF ALL STUDENTS
+Route::get("/organizations/:organization_id/sanctions", "src/get-organization-sanctions.php");
+Route::get("/organizations/code/:organization_code/sanctions", "src/get-organization-sanctions.php");
+
+// ROUTES: EVENT > ATTENDANCES
 // ATTENDANCE MADE
 Route::get("/events/:id/attendance/made/:event_attend_date_id", "src/get-event-attendance-made.php"); // Optional query parameter: page, per_page, search
 Route::get("/events/:id/attendance/made/:date", "src/get-event-attendance-made.php");
@@ -108,7 +112,7 @@ Route::get("/events/:id/attendance/made/:date", "src/get-event-attendance-made.p
 Route::post("/events/:id/attendance/:date/:time/:student_id", "src/add-attendance.php");
 Route::post("/events/:id/attendance/:date/:time/number/:student_number_id", "src/add-attendance.php");
 
-// ROUTE: EVENT > CONTRIBUTIONS
+// ROUTES: EVENT > CONTRIBUTIONS
 // CONTRIBUTIONS
 Route::get("/events/:id/contributions/made", "src/get-event-contributions-made.php"); // Optional query parameter: page, per_page, search
 // ADD CONTRIBUTION
@@ -126,6 +130,9 @@ Route::delete("/students/:id", "src/delete-student.php");	// Single delete
 // STUDENT SHIFT
 Route::post("/students/:id/shift", "src/shift-student.php");
 Route::post("/students/number/:student_number/shift", "src/shift-student.php");
+// STUDENT SANCTIONS
+Route::get("/students/:id/sanctions", "src/get-student-sanctions.php");
+Route::get("/students/number/:student_number/sanctions", "src/get-student-sanctions.php");
 
 // ROUTES: DEPARTMENT > STUDENTS
 Route::get("/departments/:department_id/students", "src/get-students.php");

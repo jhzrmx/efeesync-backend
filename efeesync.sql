@@ -221,13 +221,13 @@ CREATE TABLE attendance_made (
 
 CREATE TABLE paid_attendance_sanctions (
     paid_attend_sanction_id INT PRIMARY KEY AUTO_INCREMENT,
-    event_attend_time_id INT NOT NULL,
+    event_id INT NOT NULL,
     student_id INT NOT NULL,
     paid_sanction_amount DECIMAL(10,2) NOT NULL,
     payment_type VARCHAR(20),
     online_payment_proof VARCHAR(255),
     paid_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (event_attend_time_id) REFERENCES event_attendance_times(event_attend_time_id)
+    FOREIGN KEY (event_id) REFERENCES events(event_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (student_id) REFERENCES students(student_id)
         ON DELETE CASCADE ON UPDATE CASCADE
