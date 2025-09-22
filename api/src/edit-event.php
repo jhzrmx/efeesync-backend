@@ -93,8 +93,11 @@ try {
             INSERT INTO event_contributions (event_contri_due_date, event_contri_fee, event_contri_sanction_fee, event_id)
             VALUES (:due_date, :fee, :sanction_fee, :event_id)
         ");
+		if (empty($c['event_contri_due_date'])) {
+			$c['event_contri_due_date'] = $input['event_start_date'];
+		}
         $stmt_insert_contri->execute([
-            ":due_date" => $c['event_contri_due_date'] ?? null,
+            ":due_date" => $c['event_contri_due_date'],
             ":fee" => isset($c['event_contri_fee']) ? $c['event_contri_fee'] : 0,
             ":sanction_fee" => isset($c['event_contri_sanction_fee']) ? $c['event_contri_sanction_fee'] : 0,
             ":event_id" => $event_id

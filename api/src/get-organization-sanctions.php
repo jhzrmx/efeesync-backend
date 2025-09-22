@@ -36,12 +36,12 @@ try {
             ec.event_contri_id,
             ec.event_contri_fee,
             ec.event_contri_sanction_fee,
-            cm.paid_amount,
+            cm.amount_paid,
             CASE
                 WHEN cm.contribution_id IS NULL 
                      AND CURDATE() > ec.event_contri_due_date
                 THEN ec.event_contri_fee + ec.event_contri_sanction_fee
-                WHEN cm.paid_amount < ec.event_contri_fee 
+                WHEN cm.amount_paid < ec.event_contri_fee 
                      AND CURDATE() > ec.event_contri_due_date
                 THEN (ec.event_contri_fee + ec.event_contri_sanction_fee) - cm.paid_amount
                 ELSE 0

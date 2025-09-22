@@ -30,7 +30,7 @@ try {
             WHERE (:dept_code IS NULL OR d.department_code = :dept_code)
         ),
         fees_collected AS (
-            SELECT COALESCE(SUM(cm.paid_amount),0) AS total_fees_collected
+            SELECT COALESCE(SUM(cm.amount_paid),0) AS total_fees_collected
             FROM contributions_made cm
             JOIN event_contributions ec ON cm.event_contri_id = ec.event_contri_id
             JOIN events e ON ec.event_id = e.event_id
@@ -41,7 +41,7 @@ try {
         sanctions_collected AS (
             SELECT 
               COALESCE((
-                SELECT SUM(pcs.paid_sanction_amount)
+                SELECT SUM(pcs.amount_paid)
                 FROM paid_contribution_sanctions pcs
                 JOIN event_contributions ec ON pcs.event_contri_id = ec.event_contri_id
                 JOIN events e ON ec.event_id = e.event_id
@@ -51,9 +51,9 @@ try {
               ),0)
               +
               COALESCE((
-                SELECT SUM(pas.paid_sanction_amount)
+                SELECT SUM(pas.amount_paid)
                 FROM paid_attendance_sanctions pas
-                JOIN event_attendance_times eat ON pas.event_attend_time_id = eat.event_attend_time_id
+                JOIN event_attendance_times eat ON pas.event_id = eat.event_id
                 JOIN event_attendance_dates ead ON eat.event_attend_date_id = ead.event_attend_date_id
                 JOIN events e ON ead.event_id = e.event_id
                 JOIN organizations o ON e.organization_id = o.organization_id

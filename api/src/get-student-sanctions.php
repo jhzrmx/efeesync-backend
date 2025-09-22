@@ -4,7 +4,7 @@ require_once "_middleware.php";
 require_once "_request.php";
 
 header("Content-Type: application/json");
-require_role(["treasurer", "admin"]); // Adjust as needed
+require_role(["treasurer", "admin"]);
 
 $response = ["status" => "error"];
 
@@ -40,7 +40,7 @@ try {
             e.event_name,
             ec.event_contri_fee,
             ec.event_contri_sanction_fee,
-            IFNULL(SUM(cm.paid_amount), 0) AS total_paid,
+            IFNULL(SUM(cm.amount_paid), 0) AS total_paid,
             (ec.event_contri_fee + ec.event_contri_sanction_fee) AS total_due,
             e.event_end_date
         FROM event_contributions ec
@@ -88,7 +88,7 @@ try {
             e.event_id,
             e.event_name,
             SUM(eat.event_attend_sanction_fee) AS total_due,
-            IFNULL(SUM(pas.paid_sanction_amount), 0) AS total_paid,
+            IFNULL(SUM(pas.amount_paid), 0) AS total_paid,
             e.event_end_date
         FROM events e
         INNER JOIN event_attendance_dates ead ON e.event_id = ead.event_id
