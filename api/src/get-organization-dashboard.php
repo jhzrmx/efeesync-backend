@@ -53,9 +53,7 @@ try {
               COALESCE((
                 SELECT SUM(pas.amount_paid)
                 FROM paid_attendance_sanctions pas
-                JOIN event_attendance_times eat ON pas.event_id = eat.event_id
-                JOIN event_attendance_dates ead ON eat.event_attend_date_id = ead.event_attend_date_id
-                JOIN events e ON ead.event_id = e.event_id
+                JOIN events e ON pas.event_id = e.event_id
                 JOIN organizations o ON e.organization_id = o.organization_id
                 JOIN departments d ON o.department_id = d.department_id
                 WHERE (:dept_code IS NULL OR d.department_code = :dept_code)

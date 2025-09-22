@@ -50,6 +50,7 @@ try {
            AND cm.student_id = ?
 		LEFT JOIN paid_contribution_sanctions pcs
             ON pcs.event_contri_id = ec.event_contri_id
+		   AND pcs.payment_status = 'APPROVED'
            AND pcs.student_id = ?
         WHERE FIND_IN_SET(LEFT(?, 1), e.event_target_year_levels) > 0
         GROUP BY e.event_id, e.event_name, ec.event_contri_fee, ec.event_contri_sanction_fee, e.event_end_date
@@ -83,12 +84,21 @@ try {
     // =====================
     // ATTENDANCE SANCTIONS
     // =====================
+	// Get the total paid first
+	$attend_total_sql = "
+		SELECT IFNULL(SUM(amount_paid), 0) AS total_paid
+		FROM paid_attendance_sanctions
+		WHERE student_id = ? AND payment_status = 'APPROVED'
+	";
+	$attend_total_stmt = $pdo->prepare($attend_total_sql);
+    $attend_total_stmt->execute([$student_id]);
+    $attend_total_first_row = $attend_total_stmt->fetchAll(PDO::FETCH_ASSOC)[0];
+	// Then get the total sanctions to be paid
     $attend_sql = "
         SELECT 
             e.event_id,
             e.event_name,
             SUM(eat.event_attend_sanction_fee) AS total_due,
-            IFNULL(SUM(pas.amount_paid), 0) AS total_paid,
             e.event_end_date
         FROM events e
         INNER JOIN event_attendance_dates ead ON e.event_id = ead.event_id
@@ -100,23 +110,20 @@ try {
             ON ae.event_attend_date_id = ead.event_attend_date_id 
            AND ae.student_id = ?
            AND ae.attendance_excuse_status = 'APPROVED'
-        LEFT JOIN paid_attendance_sanctions pas
-            ON pas.event_attend_time_id = eat.event_attend_time_id
-           AND pas.student_id = ?
         WHERE FIND_IN_SET(LEFT(?, 1), e.event_target_year_levels) > 0
           AND am.attendance_id IS NULL
           AND ae.attendance_excuse_id IS NULL
         GROUP BY e.event_id, e.event_name, e.event_end_date
     ";
     $attend_stmt = $pdo->prepare($attend_sql);
-    $attend_stmt->execute([$student_id, $student_id, $student_id, $student_section]);
+    $attend_stmt->execute([$student_id, $student_id, $student_section]);
     $attend_rows = $attend_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($attend_rows as $row) {
         if ($row['event_end_date'] >= date('Y-m-d')) continue; // skip ongoing events
 
         $due = (float) $row['total_due'];
-        $paid = (float) $row['total_paid'];
+        $paid = (float) $attend_total_first_row['total_paid'];
 
         if ($paid < $due) {
             $balance = $due - $paid;
