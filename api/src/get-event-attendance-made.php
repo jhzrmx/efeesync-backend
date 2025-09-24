@@ -48,8 +48,10 @@ try {
     $offset   = ($page - 1) * $per_page;
 
     // --- VALIDATIONS ---
-    $stmt = $pdo->prepare("SELECT organization_id, department_id, event_target_year_levels 
-                           FROM events WHERE event_id = :event_id");
+    $stmt = $pdo->prepare("SELECT e.organization_id, d.department_id, e.event_target_year_levels 
+                           FROM events e JOIN organizations o ON e.organization_id = o.organization_id
+                           LEFT JOIN departments d  ON o.department_id = d.department_id 
+                           WHERE event_id = :event_id");
     $stmt->execute([":event_id" => $event_id]);
     $event = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$event) throw new Exception("Event not found.");

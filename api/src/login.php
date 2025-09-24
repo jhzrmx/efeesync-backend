@@ -134,7 +134,7 @@ try {
 	$payload = [
 		"user_id" 	=> $user["user_id"],
 		"role"    	=> $activeRole["role_name"],
-		"dept_code"	=> $activeRole["department_code"],
+		"dept_code"	=> $activeRole["department_code"] ?? null,
 		"exp"		=> time() + (3600 * 24 * 15), // 15 days
 		"nbf"		=> time(),
 	];

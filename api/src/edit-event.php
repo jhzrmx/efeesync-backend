@@ -24,10 +24,10 @@ try {
         throw new Exception("Missing organization identifier in route");
     }
 
-    if (!isset($event_id)) {
+    if (!isset($id)) {
         throw new Exception("Missing event identifier in route");
     }
-    $event_id = intval($event_id);
+    $event_id = intval($id);
 
     // Verify event belongs to organization
     $stmt = $pdo->prepare("SELECT * FROM events WHERE event_id = :event_id AND organization_id = :org_id LIMIT 1");

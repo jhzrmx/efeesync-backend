@@ -237,8 +237,8 @@ CREATE TABLE paid_attendance_sanctions (
 
 CREATE TABLE attendance_excuse (
     attendance_excuse_id INT PRIMARY KEY AUTO_INCREMENT,
-    attendance_excuse_reason TEXT NOT NULL,
-    attendance_excuse_proof_file VARCHAR(255) NOT NULL,
+    attendance_excuse_reason TEXT,
+    attendance_excuse_proof_file VARCHAR(255),
     attendance_excuse_status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
     event_attend_date_id INT NOT NULL,
     student_id INT NOT NULL,

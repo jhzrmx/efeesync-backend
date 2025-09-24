@@ -84,16 +84,6 @@ try {
     // =====================
     // ATTENDANCE SANCTIONS
     // =====================
-	// Get the total paid first
-	$attend_total_sql = "
-		SELECT IFNULL(SUM(amount_paid), 0) AS total_paid
-		FROM paid_attendance_sanctions
-		WHERE student_id = ? AND payment_status = 'APPROVED'
-	";
-	$attend_total_stmt = $pdo->prepare($attend_total_sql);
-    $attend_total_stmt->execute([$student_id]);
-    $attend_total_first_row = $attend_total_stmt->fetchAll(PDO::FETCH_ASSOC)[0];
-	// Then get the total sanctions to be paid
     $attend_sql = "
         SELECT 
             e.event_id,
@@ -119,14 +109,23 @@ try {
     $attend_stmt->execute([$student_id, $student_id, $student_section]);
     $attend_rows = $attend_stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // Get the total paid
+    $attend_total_sql = "
+        SELECT IFNULL(SUM(amount_paid), 0) AS total_paid
+        FROM paid_attendance_sanctions
+        WHERE student_id = ? AND payment_status = 'APPROVED' AND event_id = ?
+    ";
     foreach ($attend_rows as $row) {
-        if ($row['event_end_date'] >= date('Y-m-d')) continue; // skip ongoing events
+        if (!empty($row['event_end_date']) && $row['event_end_date'] >= date('Y-m-d')) continue;
+
+        $attend_total_stmt = $pdo->prepare($attend_total_sql);
+        $attend_total_stmt->execute([$student_id, $row["event_id"]]);
+        $paid = (float) $attend_total_stmt->fetchColumn();
 
         $due = (float) $row['total_due'];
-        $paid = (float) $attend_total_first_row['total_paid'];
 
         if ($paid < $due) {
-            $balance = $due - $paid;
+            $balance = max(0, $due - $paid);
             $total_balance += $balance;
 
             $sanctions[] = [

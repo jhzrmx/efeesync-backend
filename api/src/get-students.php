@@ -79,7 +79,7 @@ try {
 
     // Pagination setup
     $page     = isset($_GET["page"]) ? max(1, intval($_GET["page"])) : 1;
-    $per_page = isset($_GET["per_page"]) ? max(1, intval($_GET["per_page"])) : 20;
+    $per_page = isset($_GET["per_page"]) ? max(1, intval($_GET["per_page"])) : 10;
     $offset   = ($page - 1) * $per_page;
 
     // Count total before LIMIT

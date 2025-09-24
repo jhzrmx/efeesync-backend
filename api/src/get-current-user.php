@@ -10,6 +10,7 @@ $response = ["status" => "error"];
 
 try {
 	$current_user_id = current_jwt_payload()['user_id'];
+	$current_dept_code = current_jwt_payload()['dept_code'];
 	$current_role = current_jwt_payload()['role'];
 	
 	$sql = "SELECT u.user_id, u.institutional_email, u.last_name, u.first_name, u.middle_initial, u.picture, r.role_name 
@@ -64,7 +65,7 @@ try {
 				d.department_name,
 				CASE
 					WHEN o.department_id IS NULL
-					THEN NULL
+					THEN '#00ff00'
 					ELSE d.department_color
 				END AS department_color,
 				o.organization_id,
@@ -95,6 +96,7 @@ try {
 		$firstResult["full_name"] = $firstResult["first_name"]." ".$firstResult["last_name"];
 	}
 
+	$firstResult["university_wide_org"] = is_null($current_dept_code);
 	$response["status"] = "success";
 	$response["data"] = $firstResult;
 

@@ -58,38 +58,37 @@ try {
                 JOIN departments d ON o.department_id = d.department_id
                 WHERE (:dept_code IS NULL OR d.department_code = :dept_code)
               ),0) AS total_sanctions_collected
-        ),
-        student_summary AS (
-            SELECT 
-              SUM(CASE WHEN LEFT(s.student_section, 1) = '1' THEN 1 ELSE 0 END) AS total_first_year,
-              SUM(CASE WHEN LEFT(s.student_section, 1) = '2' THEN 1 ELSE 0 END) AS total_second_year,
-              SUM(CASE WHEN LEFT(s.student_section, 1) = '3' THEN 1 ELSE 0 END) AS total_third_year,
-              SUM(CASE WHEN LEFT(s.student_section, 1) = '4' THEN 1 ELSE 0 END) AS total_fourth_year
-            FROM students s
-            JOIN programs p ON s.student_current_program = p.program_id
-            JOIN departments d ON p.department_id = d.department_id
-            WHERE (:dept_code IS NULL OR d.department_code = :dept_code)
         )
         SELECT 
           e.total_events,
           st.total_students,
           f.total_fees_collected,
-          sn.total_sanctions_collected,
-          ss.total_first_year,
-          ss.total_second_year,
-          ss.total_third_year,
-          ss.total_fourth_year
+          sn.total_sanctions_collected
         FROM event_count e
         CROSS JOIN student_count st
         CROSS JOIN fees_collected f
-        CROSS JOIN sanctions_collected sn
-        CROSS JOIN student_summary ss;
+        CROSS JOIN sanctions_collected sn;
     ");
     $stmt->execute($params);
     $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
+    $stmt_student_population = $pdo->prepare("
+        SELECT 
+            SUM(CASE WHEN LEFT(s.student_section, 1) = '1' THEN 1 ELSE 0 END) AS total_first_year,
+            SUM(CASE WHEN LEFT(s.student_section, 1) = '2' THEN 1 ELSE 0 END) AS total_second_year,
+            SUM(CASE WHEN LEFT(s.student_section, 1) = '3' THEN 1 ELSE 0 END) AS total_third_year,
+            SUM(CASE WHEN LEFT(s.student_section, 1) = '4' THEN 1 ELSE 0 END) AS total_fourth_year
+        FROM students s
+        JOIN programs p ON s.student_current_program = p.program_id
+        JOIN departments d ON p.department_id = d.department_id
+        WHERE (:dept_code IS NULL OR d.department_code = :dept_code);
+    ");
+    $stmt_student_population->execute($params);
+    $data_student_population = $stmt_student_population->fetch(PDO::FETCH_ASSOC);
+
     $response["status"] = "success";
     $response["data"] = $data;
+    $response["data"]["student_population"] = $data_student_population;
 
 } catch (Exception $e) {
 	http_response_code(400);

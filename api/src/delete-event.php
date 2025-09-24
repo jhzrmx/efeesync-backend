@@ -9,18 +9,21 @@ require_role("treasurer");
 
 $response = ["status" => "error"];
 
-try {
-    if (!isset($organization_id)) throw new Exception("Missing organization identifier in URL.");
-	
+try {	
     $deleted = 0;
 
-    if (isset($event_id)) {
+    if (isset($id)) {
         // --- Single delete ---
-        $stmt = $pdo->prepare("DELETE FROM events WHERE event_id = :event_id AND organization_id = :org_id");
-        $stmt->execute([
-            ":event_id" => $event_id,
-            ":org_id"   => $organization_id
-        ]);
+        $sql = "DELETE FROM events WHERE event_id = :event_id";
+        if (isset($organization_id)) {
+            $sql .= "AND organization_id = :org_id";
+        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(":event_id", $id);
+        if (isset($organization_id)) {
+            $stmt->bindParam(":org_id", $organization_id);
+        }
+        $stmt->execute();
         $deleted = $stmt->rowCount();
     } else {
         // --- Multi delete ---
@@ -38,11 +41,11 @@ try {
         $deleted = $stmt->rowCount();
     }
 	
-	$response["message"] = "success";
+	$response["status"] = "success";
 	$response["deleted"] = $deleted;
 	$response["message"] = $deleted > 0 ? "Successfully deleted $deleted event(s)." : "No events deleted.";
 
-} } catch (Exception $e) {
+} catch (Exception $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
