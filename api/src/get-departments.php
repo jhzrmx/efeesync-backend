@@ -1,12 +1,17 @@
-<?php
+<?php 
 require_once "_connect_to_database.php";
-require_once "_middleware.php";
+require_once "_current_role.php";
 
 header("Content-Type: application/json");
 
-require_login();
+if (current_role() == null) {
+	http_response_code(403);
+	echo json_encode(["status" => "error", "message" => "Forbidden"]);
+	exit();
+}
 
-$response = ["status" => "error"];
+$response = [];
+$response["status"] = "error";
 
 try {
 	$sql = "SELECT 

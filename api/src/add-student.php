@@ -11,7 +11,7 @@ require_role(["admin", "treasurer"]);
 $response = ["status" => "error"];
 
 $json = json_request_body();
-require_params($json_post_data,  [
+require_params($json,  [
     "student_number_id",
     "student_section",
     "first_name",
@@ -61,8 +61,8 @@ try {
 
     // Insert into student_programs_taken
     $stmt = $pdo->prepare("
-        INSERT INTO student_programs_taken (student_id, program_id, start_date, shift_status) 
-        VALUES (?, ?, CURDATE(), 'APPROVED')
+        INSERT INTO student_programs_taken (student_id, program_id, start_date) 
+        VALUES (?, ?, CURDATE())
     ");
     $stmt->execute([
         $student_id,

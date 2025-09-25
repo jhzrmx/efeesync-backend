@@ -147,7 +147,12 @@ try {
         $sql = "
             SELECT SQL_CALC_FOUND_ROWS
                    s.student_id,
-                   CONCAT(u.last_name, ', ', u.first_name, IFNULL(CONCAT(' ', u.middle_initial), '')) AS student_full_name,
+                   CASE 
+                        WHEN u.middle_initial IS NOT NULL AND u.middle_initial <> '' 
+                            THEN CONCAT(u.last_name, ', ', u.first_name, ' ', u.middle_initial, '.')
+                        ELSE CONCAT(u.last_name, ', ', u.first_name)
+                    END AS student_full_name,
+                   s.student_section,
                    s.student_number_id,
                    $dynamicCols
             FROM students s
@@ -162,8 +167,13 @@ try {
         $sql = "
             SELECT SQL_CALC_FOUND_ROWS
                    s.student_id,
-                   CONCAT(u.last_name, ', ', u.first_name, IFNULL(CONCAT(' ', u.middle_initial), '')) AS student_full_name,
+                   CASE 
+                        WHEN u.middle_initial IS NOT NULL AND u.middle_initial <> '' 
+                            THEN CONCAT(u.last_name, ', ', u.first_name, ' ', u.middle_initial, '.')
+                        ELSE CONCAT(u.last_name, ', ', u.first_name)
+                    END AS student_full_name,
                    s.student_number_id,
+                   s.student_section,
                    $dynamicCols
             FROM students s
             JOIN users u ON s.user_id = u.user_id
@@ -198,6 +208,7 @@ try {
             "student_id" => $s["student_id"],
             "student_full_name" => $s["student_full_name"],
             "student_number_id" => $s["student_number_id"],
+            "student_section" => $s["student_section"],
             "attendance" => $attendanceMap
         ];
     }

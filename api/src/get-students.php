@@ -67,6 +67,7 @@ try {
                         OR u.last_name LIKE :search
                         OR u.middle_initial LIKE :search
                         OR s.student_number_id LIKE :search
+                        OR s.student_section LIKE :search
                         OR u.institutional_email LIKE :search
                         OR p.program_code LIKE :search
                         OR d.department_code LIKE :search)";

@@ -43,6 +43,7 @@ try {
 		// Check if new email already exists (and not from this user)
 		$stmt = $pdo->prepare("SELECT user_id FROM users WHERE institutional_email = ? AND user_id != ?");
 		$stmt->execute([$email, $user_id]);
+
 		if ($stmt->rowCount() > 0) {
 			echo json_encode(["status" => "error", "message" => "Email already exists: $email"]);
 			exit();
@@ -53,16 +54,20 @@ try {
 	}
 
 	// Update student record
-	if ($sec || $prog) {
-		$stmt = $pdo->prepare("UPDATE students SET student_section=?, student_current_program=? WHERE student_id=?");
-		$stmt->execute([$sec, $prog, $student_id]);
+	if ($sec) {
+		$stmt = $pdo->prepare("UPDATE students SET student_section=? WHERE student_id=?");
+		$stmt->execute([$sec, $student_id]);
+	}
+	if ($prog) {
+		$stmt = $pdo->prepare("UPDATE students SET student_current_program=? WHERE student_id=?");
+		$stmt->execute([$prog, $student_id]);
 	}
 
-	// Insert new program to `student_programs_taken`
-	if ($prog) {
-		$stmt = $pdo->prepare("INSERT INTO student_programs_taken (student_id, program_id, start_date, shift_status) VALUES (?, ?, CURDATE(), 'Approved')");
-		$stmt->execute([$student_id, $prog]);
-	}
+	// Update program history
+	/*if ($prog) {
+		$stmt = $pdo->prepare("UPDATE student_programs_taken SET program_id = ? WHERE student_id = ?");
+		$stmt->execute([$prog, $student_id]);
+	}*/
 
 	$pdo->commit();
 
@@ -71,6 +76,7 @@ try {
 		"updated_student_id" => $student_id,
 		"new_email" => isset($email) ? $email : "unchanged"
 	]);
+
 } catch (Exception $e) {
 	$pdo->rollBack();
 	http_response_code(500);
