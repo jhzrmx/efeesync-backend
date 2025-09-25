@@ -16,9 +16,9 @@ try {
     $stmt = $pdo->prepare("
         SELECT e.event_id, e.event_target_year_levels, d.department_id
         FROM events e
-        JOIN organizations o ON o.organization_id = e.organization_id
-        JOIN departments d ON d.department_id = o.department_id
-        WHERE e.event_id = :event_id
+        JOIN organizations o ON e.organization_id = o.organization_id
+        LEFT JOIN departments d  ON o.department_id = d.department_id 
+        WHERE event_id = :event_id
     ");
     $stmt->execute([":event_id" => $id]);
     $event = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -36,31 +36,36 @@ try {
         SELECT 
             s.student_id,
             s.student_number_id,
+            s.student_section,
             CASE 
                 WHEN u.middle_initial IS NOT NULL AND u.middle_initial <> '' 
-                    THEN CONCAT(u.first_name, ' ', u.middle_initial, '. ', u.last_name)
-                ELSE CONCAT(u.first_name, ' ', u.last_name)
+                    THEN CONCAT(u.last_name, ', ', u.first_name, ' ', u.middle_initial, '.')
+                ELSE CONCAT(u.last_name, ', ', u.first_name)
             END AS full_name,
             ec.event_contri_fee,
-            IFNULL(SUM(p.amount_paid), 0) AS total_paid,
-            (ec.event_contri_fee - IFNULL(SUM(p.amount_paid), 0)) AS remaining_balance
+            IFNULL(SUM(cm.amount_paid), 0) AS total_paid,
+            (ec.event_contri_fee - IFNULL(SUM(cm.amount_paid), 0)) AS remaining_balance
         FROM students s
         JOIN users u ON u.user_id = s.user_id
         JOIN programs pr ON pr.program_id = s.student_current_program
-        JOIN departments d ON d.department_id = pr.department_id
         JOIN event_contributions ec ON ec.event_id = :event_id
-        LEFT JOIN event_contribution_payments p 
-            ON p.student_id = s.student_id 
-           AND p.event_id = ec.event_id
-        WHERE d.department_id = :dept_id
+        LEFT JOIN contributions_made cm 
+            ON cm.student_id = s.student_id 
+           AND cm.event_contri_id = ec.event_contri_id
     ";
 
     // ---- Filters ----
     $conditions = [];
-    $params = [
-        ":event_id" => $id,
-        ":dept_id"  => $event["department_id"]
-    ];
+    $params = [];
+    $params[":event_id"] = $id;
+
+    // Check if the event is university wide
+    if (!empty($event['department_id'])) {
+        $baseSql .= " WHERE pr.department_id = :dept_id";
+        $params[":dept_id"]  = $event["department_id"];
+    } else {
+        $baseSql .= " WHERE 1=1";
+    }
 
     // Filter by event target year levels
     if (!empty($targetYears)) {
@@ -88,6 +93,7 @@ try {
                         OR u.last_name LIKE :search
                         OR u.middle_initial LIKE :search
                         OR s.student_number_id LIKE :search
+                        OR s.student_section LIKE :search
                         OR u.institutional_email LIKE :search)";
         $params[":search"] = "%" . $_GET["search"] . "%";
     }
@@ -127,7 +133,7 @@ try {
         "page" => $page,
         "per_page" => $limit,
         "total" => (int)$total,
-        "total_pages" => ceil($total / $per_page)
+        "total_pages" => ceil($total / $limit)
     ];
 
 } catch (Exception $e) {

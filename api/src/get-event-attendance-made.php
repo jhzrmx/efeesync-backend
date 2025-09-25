@@ -143,45 +143,32 @@ try {
         $yearFilter = " AND LEFT(s.student_section,1) IN ($inYears)";
     }
 
+    // Check if the event is university wide
     if (!empty($event['department_id'])) {
-        $sql = "
-            SELECT SQL_CALC_FOUND_ROWS
-                   s.student_id,
-                   CASE 
-                        WHEN u.middle_initial IS NOT NULL AND u.middle_initial <> '' 
-                            THEN CONCAT(u.last_name, ', ', u.first_name, ' ', u.middle_initial, '.')
-                        ELSE CONCAT(u.last_name, ', ', u.first_name)
-                    END AS student_full_name,
-                   s.student_section,
-                   s.student_number_id,
-                   $dynamicCols
-            FROM students s
-            JOIN users u ON s.user_id = u.user_id
-            JOIN programs p ON s.student_current_program = p.program_id
-            WHERE p.department_id = :dept_id $yearFilter $whereSearch
-            ORDER BY u.last_name, u.first_name
-            LIMIT :offset, :per_page
-        ";
+        $isUnivWideSql = "p.department_id = :dept_id";
         $params[":dept_id"] = $event['department_id'];
     } else {
-        $sql = "
-            SELECT SQL_CALC_FOUND_ROWS
-                   s.student_id,
-                   CASE 
-                        WHEN u.middle_initial IS NOT NULL AND u.middle_initial <> '' 
-                            THEN CONCAT(u.last_name, ', ', u.first_name, ' ', u.middle_initial, '.')
-                        ELSE CONCAT(u.last_name, ', ', u.first_name)
-                    END AS student_full_name,
-                   s.student_number_id,
-                   s.student_section,
-                   $dynamicCols
-            FROM students s
-            JOIN users u ON s.user_id = u.user_id
-            WHERE 1=1 $yearFilter $whereSearch
-            ORDER BY u.last_name, u.first_name
-            LIMIT :offset, :per_page
-        ";
+        $isUnivWideSql = "1=1";
     }
+
+    $sql = "
+        SELECT SQL_CALC_FOUND_ROWS
+               s.student_id,
+               CASE 
+                    WHEN u.middle_initial IS NOT NULL AND u.middle_initial <> '' 
+                        THEN CONCAT(u.last_name, ', ', u.first_name, ' ', u.middle_initial, '.')
+                    ELSE CONCAT(u.last_name, ', ', u.first_name)
+                END AS student_full_name,
+               s.student_section,
+               s.student_number_id,
+               $dynamicCols
+        FROM students s
+        JOIN users u ON s.user_id = u.user_id
+        JOIN programs p ON s.student_current_program = p.program_id
+        WHERE $isUnivWideSql $yearFilter $whereSearch
+        ORDER BY u.last_name, u.first_name
+        LIMIT :offset, :per_page
+    ";
 
     $stmt = $pdo->prepare($sql);
     foreach ($params as $k => $v) {
