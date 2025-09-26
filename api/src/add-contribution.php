@@ -8,7 +8,7 @@ header("Content-Type: application/json");
 require_role(["admin", "treasurer"]);
 
 $input = json_request_body();
-require_params($input, ["paid_amount"]);
+require_params($input, ["amount_paid"]);
 
 $response = ["status" => "error"];
 
@@ -36,36 +36,36 @@ try {
     $event_contri_fee = $eventContri["event_contri_fee"];
 
     // ---- Validate input ----
-    if ($input["paid_amount"] <= 0) {
+    if ($input["amount_paid"] <= 0) {
         throw new Exception("Paid amount must be greater than zero.");
     }
 
-    $paid_amount = (float)$input["paid_amount"];
+    $amount_paid = (float)$input["amount_paid"];
     $payment_type = isset($input["payment_type"]) ? strtoupper($input["payment_type"]) : "CASH";
     $online_payment_proof = isset($input["online_payment_proof"]) ? $input["online_payment_proof"] : null;
 
     // ---- Optional: Prevent overpayment ----
-    $stmt = $pdo->prepare("SELECT IFNULL(SUM(paid_amount),0) AS total_paid 
+    $stmt = $pdo->prepare("SELECT IFNULL(SUM(amount_paid),0) AS total_paid 
                            FROM contributions_made 
                            WHERE event_contri_id = :event_contri_id AND student_id = :student_id");
     $stmt->execute([":event_contri_id" => $event_contri_id, ":student_id" => $student_id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $totalPaid = $row["total_paid"];
 
-    if (($totalPaid + $paid_amount) > $event_contri_fee) {
+    if (($totalPaid + $amount_paid) > $event_contri_fee) {
         throw new Exception("Payment exceeds required contribution fee.");
     }
 
     // ---- Insert payment ----
     $stmt = $pdo->prepare("
         INSERT INTO contributions_made 
-            (event_contri_id, student_id, paid_amount, payment_type, online_payment_proof) 
-        VALUES (:event_contri_id, :student_id, :paid_amount, :payment_type, :online_payment_proof)
+            (event_contri_id, student_id, amount_paid, payment_type, online_payment_proof) 
+        VALUES (:event_contri_id, :student_id, :amount_paid, :payment_type, :online_payment_proof)
     ");
     $stmt->execute([
         ":event_contri_id" => $event_contri_id,
         ":student_id" => $student_id,
-        ":paid_amount" => $paid_amount,
+        ":amount_paid" => $amount_paid,
         ":payment_type" => $payment_type,
         ":online_payment_proof" => $online_payment_proof
     ]);
