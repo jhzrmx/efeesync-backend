@@ -15,6 +15,7 @@ if (current_role()) {
 		"message" => "You're already logged in",
 		"data"    => [
 			"current_user_id"	=> current_jwt_payload()["user_id"],
+			"current_org_code"	=> current_jwt_payload()["org_code"],
 			"current_dept_code"	=> current_jwt_payload()["dept_code"],
 			"current_role"		=> current_jwt_payload()["role"]
 		]
@@ -135,6 +136,7 @@ try {
 		"user_id" 	=> $user["user_id"],
 		"role"    	=> $activeRole["role_name"],
 		"dept_code"	=> $activeRole["department_code"] ?? null,
+		"org_code"	=> $activeRole["organization_code"] ?? null,
 		"exp"		=> time() + (3600 * 24 * 15), // 15 days
 		"nbf"		=> time(),
 	];

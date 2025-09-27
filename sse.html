@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SSE Example</title>
+</head>
+<body>
+  <h1>Server-Sent Events Example</h1>
+  <form id="sse-form">
+    <input type="text" name="sse-url" value="/api/notifications.php" id="sse-url">
+    <input type="submit" name="listen" value="Listen">
+  </form>
+  <span id="notif-badge"></span>
+  <div id="messages"></div>
+
+  <script>
+    document.getElementById("sse-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const url = document.getElementById("sse-url").value;
+      const eventSource = new EventSource(url);
+
+      const messagesDiv = document.getElementById("messages");
+
+      eventSource.addEventListener("notification", function(event) {
+        const messagesDiv = document.getElementById("messages");
+        const badge = document.getElementById("notif-badge");
+
+        try {
+          const data = JSON.parse(event.data);
+
+          // Update badge count
+          badge.innerHTML = data.unread_count > 0 ? data.unread_count : "";
+
+          // Render notification cards
+          let html = "";
+          data.notifications.forEach(n => {
+            html += `
+              <div style="border:1px solid #ccc; border-radius:6px; padding:10px; margin:10px 0; ${n.is_read ? 'background:#fff;' : 'background:#eee;'}">
+                <strong>ID:</strong> ${n.notification_id}<br>
+                <strong>Type:</strong> ${n.notification_type}<br>
+                <strong>For:</strong> ${n.notification_for || "—"}<br>
+                <strong>Content:</strong> ${n.notification_content}<br>
+                <strong>Redirect:</strong> <a href="${n.url_redirect}">${n.url_redirect}</a><br>
+                <small><em>${n.created_at}</em></small>
+              </div>
+            `;
+          });
+
+          messagesDiv.innerHTML = html;
+
+        } catch (e) {
+          messagesDiv.innerHTML = `<pre>${event.data}</pre>`;
+        }
+      });
+
+      // Handle errors / connection issues
+      eventSource.onerror = function(err) {
+        console.error("SSE connection error:", err);
+      };
+    });
+  </script>
+</body>
+</html>

@@ -92,6 +92,34 @@ try {
         }
     }
 
+    //Insert notification for org members
+    $stmt = $pdo->prepare("
+        INSERT INTO notifications (notification_type, notification_content, url_redirect)
+        VALUES (:type, :content, :url)
+    ");
+    $stmt->execute([
+        ":type"    => "event",
+        ":content" => "New event added: " . $json_post_data["event_name"] .
+                      " on " . date("M d, Y", strtotime($json_post_data["event_start_date"])),
+        ":url"     => "/events/" . $event_id
+    ]);
+
+    $notification_id = $pdo->lastInsertId();
+
+    // Link notification to org
+    $year_levels = implode(",", $json_post_data["event_target_year_levels"]); 
+    // e.g. ["1","2","3"] → "1,2,3"
+
+    $stmt = $pdo->prepare("
+        INSERT INTO notification_targets (notification_id, scope, organization_id, year_levels)
+        VALUES (:notification_id, 'org', :org_id, :year_levels)
+    ");
+    $stmt->execute([
+        ":notification_id" => $notification_id,
+        ":org_id"          => $organization_id,
+        ":year_levels"     => $year_levels
+    ]);
+
     $pdo->commit();
 
     $response["status"] = "success";

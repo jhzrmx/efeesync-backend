@@ -131,6 +131,9 @@ Route::get("/events/:id/contributions/made", "src/get-event-contributions-made.p
 // ADD CONTRIBUTION
 Route::post("/events/:id/contributions/:student_id", "src/add-contribution.php");
 Route::post("/events/:id/contributions/number/:student_number_id", "src/add-contribution.php");
+// REVOKE CONTRIBUTION
+Route::delete("/events/:id/contributions/:student_id", "src/delete-contribution.php"); 
+Route::delete("/events/:id/contributions/number/:student_number_id", "src/delete-contribution.php");
 
 // ROUTES: STUDENTS
 Route::get("/students", "src/get-students.php"); // Optional query parameter: page, per_page, search
@@ -154,7 +157,6 @@ Route::get("/departments/code/:department_code/students", "src/get-students.php"
 Route::get("/departments/code/:department_code/students/search/:search", "src/get-students.php");
 
 // ROUTE: NOTIFICATIONS
-Route::get("/notifications", "src/notifications-sse.php"); // SSE Route
 Route::post("/notifications/:id", "src/notifications-read.php");
 
 // ROUTE: 404

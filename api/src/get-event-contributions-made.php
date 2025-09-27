@@ -115,7 +115,7 @@ try {
     $page  = isset($_GET["page"]) ? max(1, (int)$_GET["page"]) : 1;
     $offset = ($page - 1) * $limit;
 
-    $finalSql = $baseSql . " ORDER BY remaining_balance DESC LIMIT :limit OFFSET :offset";
+    $finalSql = $baseSql . " ORDER BY remaining_balance DESC LIMIT :limit OFFSET :offset"; //can be ORDER BY remaining_balance
 
     $stmt = $pdo->prepare($finalSql);
     foreach ($params as $key => $val) {

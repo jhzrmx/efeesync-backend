@@ -135,17 +135,43 @@ CREATE TABLE organization_officers (
 -- ================================
 CREATE TABLE notifications (
     notification_id INT PRIMARY KEY AUTO_INCREMENT,
-    notification_type VARCHAR(20),
-	notification_for VARCHAR(50) DEFAULT 'student',
-	notification_scope ENUM('user', 'role', 'global') NOT NULL DEFAULT 'user',
+    notification_type VARCHAR(20) NOT NULL, -- event, sanction, system, etc.
     notification_content TEXT NOT NULL,
-    notification_read BOOLEAN NOT NULL DEFAULT FALSE, -- used only when scope = USER
-    url_redirect VARCHAR(100) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    user_id INT NULL, -- only required when scope = USER
+    url_redirect VARCHAR(255) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) AUTO_INCREMENT = 1001;
+
+-- Who should receive it (audience definition)
+CREATE TABLE notification_targets (
+    target_id INT PRIMARY KEY AUTO_INCREMENT,
+    notification_id INT NOT NULL,
+    scope ENUM('user','role','org','global') NOT NULL,
+    year_levels SET('1','2','3','4') NOT NULL DEFAULT '1,2,3,4',
+    user_id INT NULL,
+    role_id INT NULL,
+    organization_id INT NULL,
+    FOREIGN KEY (notification_id) REFERENCES notifications(notification_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (role_id) REFERENCES roles(role_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (organization_id) REFERENCES organizations(organization_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) AUTO_INCREMENT = 1001;
+
+-- Track which users read it
+CREATE TABLE notification_reads (
+    read_id INT PRIMARY KEY AUTO_INCREMENT,
+    notification_id INT NOT NULL,
+    user_id INT NOT NULL,
+    read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (notification_id) REFERENCES notifications(notification_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) AUTO_INCREMENT = 1001;
+
 
 -- ================================
 -- CONTRIBUTIONS & SANCTIONS

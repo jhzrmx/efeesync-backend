@@ -28,6 +28,7 @@ try {
 
 	$user_id = $student["user_id"];
 
+	$student_number_id = $json["student_number_id"] ?? null;
 	$first_name = $json["first_name"] ?? null;
 	$last_name = $json["last_name"] ?? null;
 	$mid = $json["middle_initial"] ?? null;
@@ -55,8 +56,8 @@ try {
 
 	// Update student record
 	if ($sec) {
-		$stmt = $pdo->prepare("UPDATE students SET student_section=? WHERE student_id=?");
-		$stmt->execute([$sec, $student_id]);
+		$stmt = $pdo->prepare("UPDATE students SET student_number_id=?, student_section=? WHERE student_id=?");
+		$stmt->execute([$student_number_id, $sec, $student_id]);
 	}
 	if ($prog) {
 		$stmt = $pdo->prepare("UPDATE students SET student_current_program=? WHERE student_id=?");
