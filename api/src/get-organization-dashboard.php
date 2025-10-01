@@ -53,16 +53,16 @@ try {
         ),
         sanctions_collected AS (
             SELECT 
-              COALESCE((
-                SELECT SUM(pcs.amount_paid)
-                FROM paid_contribution_sanctions pcs
-                JOIN event_contributions ec ON pcs.event_contri_id = ec.event_contri_id
-                JOIN events e ON ec.event_id = e.event_id
-                JOIN organizations o ON e.organization_id = o.organization_id
-                JOIN departments d ON o.department_id = d.department_id
-                WHERE (:dept_id IS NULL OR d.department_id = :dept_id) AND o.department_id = :dept_id
-              ),0)
-              +
+              -- COALESCE((
+              --   SELECT SUM(pcs.amount_paid)
+              --   FROM paid_contribution_sanctions pcs
+              --   JOIN event_contributions ec ON pcs.event_contri_id = ec.event_contri_id
+              --   JOIN events e ON ec.event_id = e.event_id
+              --   JOIN organizations o ON e.organization_id = o.organization_id
+              --   JOIN departments d ON o.department_id = d.department_id
+              --   WHERE (:dept_id IS NULL OR d.department_id = :dept_id) AND o.department_id = :dept_id
+              -- ) ,0)
+              -- +
               COALESCE((
                 SELECT SUM(pas.amount_paid)
                 FROM paid_attendance_sanctions pas
@@ -70,7 +70,7 @@ try {
                 JOIN organizations o ON e.organization_id = o.organization_id
                 JOIN departments d ON o.department_id = d.department_id
                 WHERE (:dept_id IS NULL OR d.department_id = :dept_id) AND o.department_id = :dept_id
-              ),0) AS total_sanctions_collected
+              ) ,0) AS total_sanctions_collected
         )
         SELECT 
           e.total_events,
@@ -102,7 +102,9 @@ try {
     $event_sql = "
         SELECT e.event_id, e.event_name, e.event_target_year_levels
         FROM events e
-        WHERE e.organization_id = ?
+        JOIN event_contributions ec ON e.event_id = ec.event_id
+        WHERE e.organization_id = ? AND e.event_sanction_has_comserv = 0
+        GROUP BY e.event_id
         ORDER BY e.event_start_date DESC
     ";
     $event_stmt = $pdo->prepare($event_sql);
@@ -166,15 +168,15 @@ try {
                 LEFT JOIN contributions_made cm 
                     ON cm.event_contri_id = ec.event_contri_id
                    AND cm.student_id = ?
-                LEFT JOIN paid_contribution_sanctions pcs
-                    ON pcs.event_contri_id = ec.event_contri_id
-                   AND pcs.student_id = ?
-                   AND pcs.payment_status = 'APPROVED'
+                -- LEFT JOIN paid_contribution_sanctions pcs
+                --     ON pcs.event_contri_id = ec.event_contri_id
+                --    AND pcs.student_id = ?
+                --   AND pcs.payment_status = 'APPROVED'
                 WHERE ec.event_id = ?
                 GROUP BY ec.event_contri_id, ec.event_contri_fee, ec.event_contri_sanction_fee
             ";
             $contri_stmt = $pdo->prepare($contri_sql);
-            $contri_stmt->execute([$student_id, $student_id, $event_id]);
+            $contri_stmt->execute([$student_id, /* $student_id, */ $event_id]);
             $contri_rows = $contri_stmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($contri_rows as $row) {

@@ -13,6 +13,10 @@ class Route {
 		self::$base_path = $script_name === '/' ? '' : $script_name;
 	}
 
+	public static function setBasePath($new_base_path) {
+		self::$base_path = $new_base_path;
+	}
+
 	public static function get($route, $path_to_include) {
 		if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 			self::reroute($route, $path_to_include);

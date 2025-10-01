@@ -52,6 +52,7 @@ try {
         LEFT JOIN contributions_made cm 
             ON cm.student_id = s.student_id 
            AND cm.event_contri_id = ec.event_contri_id
+           AND cm.payment_status = 'APPROVED'
     ";
 
     // ---- Filters ----

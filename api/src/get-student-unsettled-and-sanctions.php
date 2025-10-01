@@ -32,7 +32,7 @@ try {
     $total_balance = 0;
 
     // =====================
-    // CONTRIBUTION SANCTIONS
+    // UNSETTLED/UNPAID CONTRIBUTION
     // =====================
     $contri_sql = "
         SELECT 
@@ -48,15 +48,15 @@ try {
         LEFT JOIN contributions_made cm 
             ON cm.event_contri_id = ec.event_contri_id 
            AND cm.student_id = ?
-		LEFT JOIN paid_contribution_sanctions pcs
-            ON pcs.event_contri_id = ec.event_contri_id
-		   AND pcs.payment_status = 'APPROVED'
-           AND pcs.student_id = ?
+		-- LEFT JOIN paid_contribution_sanctions pcs
+        --     ON pcs.event_contri_id = ec.event_contri_id
+		--    AND pcs.payment_status = 'APPROVED'
+        --    AND pcs.student_id = ?
         WHERE FIND_IN_SET(LEFT(?, 1), e.event_target_year_levels) > 0
         GROUP BY e.event_id, e.event_name, ec.event_contri_fee, ec.event_contri_sanction_fee, e.event_end_date
     ";
     $contri_stmt = $pdo->prepare($contri_sql);
-    $contri_stmt->execute([$student_id, $student_id, $student_section]);
+    $contri_stmt->execute([$student_id, /*$student_id,*/ $student_section]);
     $contri_rows = $contri_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($contri_rows as $row) {
@@ -70,8 +70,7 @@ try {
             $balance = $due - $paid;
             $total_balance += $balance;
 
-            $sanctions[] = [
-                "type" => "contribution",
+            $sanctions["contributions_needed"][] = [
                 "event_id" => (int)$row["event_id"],
                 "event_name" => $row["event_name"],
                 "amount" => number_format($due, 2, '.', ''),
@@ -128,8 +127,7 @@ try {
             $balance = max(0, $due - $paid);
             $total_balance += $balance;
 
-            $sanctions[] = [
-                "type" => "attendance",
+            $sanctions["attendance_sanctions"][] = [
                 "event_id" => (int)$row["event_id"],
                 "event_name" => $row["event_name"],
                 "amount" => number_format($due, 2, '.', ''),
@@ -142,7 +140,7 @@ try {
     $response = [
         "status" => "success",
         "student_id" => (int)$student_id,
-        "sanctions" => $sanctions,
+        "data" => $sanctions,
         "total_sanction_balance" => number_format($total_balance, 2, '.', '')
     ];
 

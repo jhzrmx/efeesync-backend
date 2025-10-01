@@ -82,6 +82,13 @@ Route::delete("/organizations/:id", "src/delete-organization.php");
 Route::post("/organizations/logo/:id", "src/edit-organization-logo.php");
 Route::delete("/organizations/logo/:id", "src/delete-organization-logo.php");
 
+// ROUTES: ORGANIZATION OFFICERS
+Route::get("/organization/officers", "src/get-organization-officers.php");
+Route::get("/organization/officers/:id", "src/get-organization-officers.php");
+Route::post("/organization/officers", "src/add-organization-officer.php");
+Route::put("/organization/officers/:id", "src/edit-organization-officer.php");
+Route::delete("/organization/officers/:id", "src/delete-organization-officer.php");
+
 // ROUTES: ORGANIZATION > EVENTS
 // USING ORG ID
 Route::get("/organizations/:organization_id/events", "src/get-events.php");
@@ -101,6 +108,10 @@ Route::put("/organizations/code/:organization_code/events/:id/attendance", "src/
 Route::put("/organizations/code/:organization_code/events/:id/contribution", "src/edit-event-contribution.php");
 Route::delete("/organizations/code/:organization_code/events", "src/delete-event.php");		// Multi delete
 Route::delete("/organizations/code/:organization_code/events/:id", "src/delete-event.php");	// Single delete
+
+// ROUTES: ORGANIZATION FINANCIAL REPORTS
+Route::get("/organizations/:organization_id/financialreport", "src/get-organization-financial-report.php");
+Route::get("/organizations/code/:organization_code/financialreport", "src/get-organization-financial-report.php");
 
 // ROUTES: EVENTS (SPECIFIED ID)
 // UNIMPLEMENTED Route::get("/events/:id", "src/get-events.php");
@@ -146,9 +157,19 @@ Route::delete("/students/:id", "src/delete-student.php");	// Single delete
 // STUDENT SHIFT
 Route::post("/students/:id/shift", "src/shift-student.php");
 Route::post("/students/number/:student_number/shift", "src/shift-student.php");
-// STUDENT SANCTIONS
-Route::get("/students/:id/sanctions", "src/get-student-sanctions.php");
-Route::get("/students/number/:student_number/sanctions", "src/get-student-sanctions.php");
+// STUDENT UNSETTLED/UNPAID PAYMENTS AND SANCTIONS
+Route::get("/students/:id/unsettledandsanctions", "src/get-student-unsettled-and-sanctions.php");
+Route::get("/students/number/:student_number/unsettledandsanctions", "src/get-student-unsettled-and-sanctions.php");
+
+// STUDENT SANCTIONS IF LOGGED IN
+Route::get("/students/current/attendance/sanction", "src/get-current-student-attendance-sanctions.php");
+Route::get("/students/current/attendance/status", "src/get-current-student-attendance-attended-excused.php");
+Route::get("/students/current/contribution/status", "src/get-current-student-contribution-status.php");
+// STUDENT ONLINE PAYMENTS IF LOGGED IN (UNIMPLEMENTED)
+// Route::get("/students/onlinepayments", "src/get-student-online-payments.php");
+// Route::post("/students/onlinepayments", "src/add-student-online-payment.php");
+// Route::post("/students/onlinepayments/edit/:id", "src/edit-student-online-payment.php");
+// Route::delete("/students/onlinepayments", "src/delete-student-online-payment.php");
 
 // ROUTES: DEPARTMENT > STUDENTS
 Route::get("/departments/:department_id/students", "src/get-students.php");

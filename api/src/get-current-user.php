@@ -90,7 +90,7 @@ try {
 	if (!$firstResult) throw new Exception("User not found");
 
 	// Build full_name
-	if ($firstResult["middle_initial"] !== NULL) {
+	if ($firstResult["middle_initial"] != NULL || $firstResult["middle_initial"] != "") {
 		$firstResult["full_name"] = $firstResult["first_name"]." ".$firstResult["middle_initial"].". ".$firstResult["last_name"];
 	} else {
 		$firstResult["full_name"] = $firstResult["first_name"]." ".$firstResult["last_name"];

@@ -20,6 +20,8 @@ try {
     $time = strtoupper($time);   // AM or PM
     $inout = strtoupper($inout); // IN or OUT
 
+    if ($event_date < date("Y-m-d")) throw new Exception("This event attendance has already passed.");
+
     if (!in_array($time, ["AM","PM"])) throw new Exception("Invalid time (must be AM or PM).");
     if (!in_array($inout, ["IN","OUT"])) throw new Exception("Invalid in/out (must be IN or OUT).");
 

@@ -16,7 +16,10 @@ try {
 	    (SELECT COUNT(*) FROM organizations) AS `total_organizations`,
 	    (SELECT COUNT(*) FROM programs) AS `total_programs`,
 	    (SELECT COUNT(*) FROM students) AS `total_students`,
-	    ((SELECT COALESCE(SUM(amount_paid), 0) FROM paid_attendance_sanctions) + (SELECT COALESCE(SUM(amount_paid), 0) FROM paid_contribution_sanctions)) AS `total_sanctions_collected`
+	    (
+	    	( SELECT COALESCE(SUM(amount_paid), 0) FROM paid_attendance_sanctions)
+	    	-- + (SELECT COALESCE(SUM(amount_paid), 0) FROM paid_contribution_sanctions)
+	    	) AS `total_sanctions_collected`
 	");
 	$stmt->execute();
 	$data = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -27,7 +30,8 @@ try {
 			o.organization_code,
 			o.organization_name,
 			COALESCE(SUM(a.total_attendance_sanctions), 0) 
-			  + COALESCE(SUM(c.total_contribution_sanctions), 0) AS total_sanctions_collected
+			-- + COALESCE(SUM(c.total_contribution_sanctions), 0)
+				AS total_sanctions_collected
 		FROM organizations o
 		LEFT JOIN (
 			SELECT e.organization_id, 
@@ -36,14 +40,14 @@ try {
 			JOIN events e ON pas.event_id = e.event_id
 			GROUP BY e.organization_id
 		) a ON a.organization_id = o.organization_id
-		LEFT JOIN (
-			SELECT e.organization_id, 
-				   SUM(pcs.amount_paid) AS total_contribution_sanctions
-			FROM paid_contribution_sanctions pcs
-			JOIN event_contributions ec ON pcs.event_contri_id = ec.event_contri_id
-			JOIN events e ON ec.event_id = e.event_id
-			GROUP BY e.organization_id
-		) c ON c.organization_id = o.organization_id
+		-- LEFT JOIN (
+		-- 	SELECT e.organization_id, 
+		-- 		   SUM(pcs.amount_paid) AS total_contribution_sanctions
+		-- 	FROM paid_contribution_sanctions pcs
+		-- 	JOIN event_contributions ec ON pcs.event_contri_id = ec.event_contri_id
+		-- 	JOIN events e ON ec.event_id = e.event_id
+		-- 	GROUP BY e.organization_id
+		-- ) c ON c.organization_id = o.organization_id
 		GROUP BY o.organization_id, o.organization_code, o.organization_name
 		ORDER BY total_sanctions_collected DESC;
 	");

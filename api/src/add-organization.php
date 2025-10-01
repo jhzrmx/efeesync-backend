@@ -36,6 +36,8 @@ try {
 	$stmt->execute([$org_code, $org_name, $json_post_data["department_id"]]);
 
 	$response["status"] = "success";
+	$response["organization_id"] = $pdo->lastInsertId();
+	
 } catch (Exception $e) {
 	http_response_code(400);
 	if (strpos($e->getMessage(), "Duplicate entry")) {

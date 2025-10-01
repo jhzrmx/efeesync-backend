@@ -1,6 +1,7 @@
 <?php
 require_once "_connect_to_database.php";
 require_once "_middleware.php";
+require_once "_get_school_year_range.php";
 
 header("Content-Type: application/json");
 
@@ -41,6 +42,12 @@ try {
         echo json_encode(["status" => "error", "message" => "No organization provided"]);
         exit();
     }
+
+    $syParam = $_GET["school_year"] ?? null;
+    $syRange = get_school_year_range($syParam);
+    $where[] = "e.event_start_date >= :syStart AND e.event_end_date <= :syEnd";
+    $params[":syStart"] = $syRange["start"];
+    $params[":syEnd"] = $syRange["end"];
 
     if ($search) {
         $where[] = "(e.event_name LIKE :search OR e.event_description LIKE :search OR e.event_start_date LIKE :search or e.event_end_date LIKE :search)";

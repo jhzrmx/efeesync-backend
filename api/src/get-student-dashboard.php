@@ -26,7 +26,7 @@ try {
     $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$student || !$student['student_id']) {
-        throw new Exception("The user is not a student");
+        throw new Exception("This user is not a student");
     }
 
     $student_id = $student["student_id"];
@@ -109,7 +109,7 @@ try {
     // ===============================
     $num_active_sanctions = 0;
 
-    // Contribution sanctions
+    /* Contribution sanctions
     $contri_sanction_sql = "
         SELECT 
             ec.event_contri_sanction_fee,
@@ -128,6 +128,7 @@ try {
             $num_active_sanctions++;
         }
     }
+    */
 
     // Attendance sanctions
     $attend_sanction_sql = "

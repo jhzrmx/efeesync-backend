@@ -130,6 +130,7 @@ try {
     if ($search !== "") {
         $whereSearch = " AND (u.first_name LIKE :search 
                            OR u.last_name LIKE :search 
+                           OR s.student_section LIKE :search 
                            OR s.student_number_id LIKE :search)";
         $params[":search"] = "%$search%";
     }

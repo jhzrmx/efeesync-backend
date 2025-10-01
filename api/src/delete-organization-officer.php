@@ -11,26 +11,18 @@ $response = ["status" => "error"];
 try {
 	if (!isset($id)) throw new Exception("Missing identifier in URL");
 	// Fetch logo file first
-	$stmt = $pdo->prepare("SELECT organization_logo FROM organizations WHERE organization_id = ?");
+	$stmt = $pdo->prepare("SELECT designation FROM organization_officers WHERE organization_officer_id = ?");
 	$stmt->execute([$id]);
 	$org = $stmt->fetch(PDO::FETCH_ASSOC);
 
-	if (!$org) throw new Exception("Organization not found.");
-
-	$logo = $org["organization_logo"];
-	$logo_path = "uploads/organization_logos/" . $logo;
-
-	// Delete file if not default
-	if ($logo !== "default.jpg" && file_exists($logo_path)) {
-		unlink($logo_path);
-	}
+	if (!$org) throw new Exception("Organization officer not found.");
 
 	// Delete record
-	$stmt = $pdo->prepare("DELETE FROM organizations WHERE organization_id = ?");
+	$stmt = $pdo->prepare("DELETE FROM organization_officers WHERE organization_officer_id = ?");
 	$stmt->execute([$id]);
 
 	$response["status"] = "success";
-	$response["message"] = "Organization deleted successfully.";
+	$response["message"] = "Organization officer deleted successfully.";
 
 } catch (Exception $e) {
 	http_response_code(400);

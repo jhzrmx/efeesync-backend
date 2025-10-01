@@ -41,8 +41,6 @@ try {
     }
 
     $amount_paid = (float)$input["amount_paid"];
-    $payment_type = isset($input["payment_type"]) ? strtoupper($input["payment_type"]) : "CASH";
-    $online_payment_proof = isset($input["online_payment_proof"]) ? $input["online_payment_proof"] : null;
 
     // ---- Optional: Prevent overpayment ----
     $stmt = $pdo->prepare("SELECT IFNULL(SUM(amount_paid),0) AS total_paid 
@@ -59,15 +57,14 @@ try {
     // ---- Insert payment ----
     $stmt = $pdo->prepare("
         INSERT INTO contributions_made 
-            (event_contri_id, student_id, amount_paid, payment_type, online_payment_proof) 
-        VALUES (:event_contri_id, :student_id, :amount_paid, :payment_type, :online_payment_proof)
+            (event_contri_id, student_id, amount_paid, payment_status) 
+        VALUES (:event_contri_id, :student_id, :amount_paid, :payment_status)
     ");
     $stmt->execute([
         ":event_contri_id" => $event_contri_id,
         ":student_id" => $student_id,
         ":amount_paid" => $amount_paid,
-        ":payment_type" => $payment_type,
-        ":online_payment_proof" => $online_payment_proof
+        ":payment_status" => 'APPROVED'
     ]);
 
     $contribution_id = $pdo->lastInsertId();

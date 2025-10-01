@@ -26,8 +26,8 @@ try {
             d.department_name,
             CASE 
                 WHEN u.middle_initial IS NOT NULL AND u.middle_initial <> '' 
-                    THEN CONCAT(u.first_name, ' ', u.middle_initial, '. ', u.last_name)
-                ELSE CONCAT(u.first_name, ' ', u.last_name)
+                    THEN CONCAT(u.last_name, ', ', u.first_name, ' ', u.middle_initial, '.')
+                ELSE CONCAT(u.last_name, ', ', u.first_name)
             END AS full_name
         FROM students s
         JOIN users u ON u.user_id = s.user_id

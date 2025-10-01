@@ -62,17 +62,10 @@ CREATE TABLE organizations (
     organization_code VARCHAR(10) NOT NULL,
     organization_name VARCHAR(100) NOT NULL,
     organization_logo VARCHAR(50) DEFAULT 'default.jpg',
+    budget_initial_calibration DECIMAL(10,2) NOT NULL DEFAULT 0, -- moved budget calibration here
     department_id INT NULL,
     FOREIGN KEY (department_id) REFERENCES departments(department_id)
         ON DELETE SET NULL ON UPDATE CASCADE
-) AUTO_INCREMENT = 1001;
-
-CREATE TABLE budgets (
-    budget_id INT PRIMARY KEY AUTO_INCREMENT,
-    budget_initial_calibration DECIMAL(10,2) NOT NULL,
-    organization_id INT NOT NULL,
-    FOREIGN KEY (organization_id) REFERENCES organizations(organization_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
 ) AUTO_INCREMENT = 1001;
 
 CREATE TABLE budget_deductions (
@@ -191,8 +184,7 @@ CREATE TABLE contributions_made (
     event_contri_id INT NOT NULL,
     student_id INT NOT NULL,
     amount_paid DECIMAL(10,2) NOT NULL DEFAULT 0,
-    payment_type VARCHAR(20) DEFAULT 'CASH',
-    online_payment_proof VARCHAR(255),
+    payment_status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
     paid_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (event_contri_id) REFERENCES event_contributions(event_contri_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
@@ -200,20 +192,20 @@ CREATE TABLE contributions_made (
         ON DELETE CASCADE ON UPDATE CASCADE
 ) AUTO_INCREMENT = 1001;
 
-CREATE TABLE paid_contribution_sanctions (
-    paid_contri_sanction_id INT PRIMARY KEY AUTO_INCREMENT,
-    student_id INT NOT NULL,
-    event_contri_id INT NOT NULL,
-    amount_paid DECIMAL(10,2) NOT NULL DEFAULT 0,
-    payment_type VARCHAR(20),
-    online_payment_proof VARCHAR(255),
-	payment_status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
-    paid_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES students(student_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (event_contri_id) REFERENCES event_contributions(event_contri_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) AUTO_INCREMENT = 1001;
+-- CREATE TABLE paid_contribution_sanctions (
+--     paid_contri_sanction_id INT PRIMARY KEY AUTO_INCREMENT,
+--     student_id INT NOT NULL,
+--     event_contri_id INT NOT NULL,
+--     amount_paid DECIMAL(10,2) NOT NULL DEFAULT 0,
+--     payment_type VARCHAR(20),
+--     online_payment_proof VARCHAR(255),
+-- 	payment_status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
+--     paid_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (student_id) REFERENCES students(student_id)
+--         ON DELETE CASCADE ON UPDATE CASCADE,
+--     FOREIGN KEY (event_contri_id) REFERENCES event_contributions(event_contri_id)
+--         ON DELETE CASCADE ON UPDATE CASCADE
+-- ) AUTO_INCREMENT = 1001;
 
 -- ================================
 -- ATTENDANCE
@@ -251,8 +243,6 @@ CREATE TABLE paid_attendance_sanctions (
     event_id INT NOT NULL,
     student_id INT NOT NULL,
     amount_paid DECIMAL(10,2) NOT NULL,
-    payment_type VARCHAR(20),
-    online_payment_proof VARCHAR(255),
 	payment_status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
     paid_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (event_id) REFERENCES events(event_id)
@@ -273,6 +263,35 @@ CREATE TABLE attendance_excuse (
     FOREIGN KEY (student_id) REFERENCES students(student_id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) AUTO_INCREMENT = 1001;
+
+-- ================================
+-- ONLINE PAYMENTS FOR CONTRIBUTIONS AND ATTENDANCE SANCTIONS
+-- ================================
+
+CREATE TABLE online_payments (
+    online_payment_id INT AUTO_INCREMENT PRIMARY KEY,
+    reference_no VARCHAR(100) NOT NULL, -- GCash/Bank ref
+    method VARCHAR(50) NOT NULL,        -- GCash, Bank Transfer, etc.
+    proof_url TEXT,                     -- optional proof image/file
+    payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('PENDING','APPROVED','REJECTED') DEFAULT 'PENDING'
+);
+
+CREATE TABLE online_payment_attendance_sanctions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    online_payment_id INT NOT NULL,
+    paid_attend_sanction_id INT NOT NULL,
+    FOREIGN KEY (online_payment_id) REFERENCES online_payments(online_payment_id),
+    FOREIGN KEY (paid_attend_sanction_id) REFERENCES paid_attendance_sanctions(paid_attend_sanction_id)
+);
+
+CREATE TABLE online_payment_contributions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    online_payment_id INT NOT NULL,
+    contribution_id INT NOT NULL,
+    FOREIGN KEY (online_payment_id) REFERENCES online_payments(online_payment_id),
+    FOREIGN KEY (contribution_id) REFERENCES contributions_made(contribution_id)
+);
 
 -- ================================
 -- PROGRAM HISTORY & COMSERV
