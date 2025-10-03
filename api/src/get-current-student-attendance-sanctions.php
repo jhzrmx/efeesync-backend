@@ -133,15 +133,15 @@ try {
                 "paid" => $paid,
                 "balance" => $balance
             ];
+        }
 
-            if ($row["event_sanction_has_comserv"] == 1) {
-                $community_service[] = [
-                    "event_id" => (int)$row["event_id"],
-                    "event_name" => $row["event_name"],
-                    "event_start_date" => $row["event_start_date"],
-                    "event_end_date" => $row["event_end_date"],
-                ];
-            }
+        if ($row["event_sanction_has_comserv"] == 1) {
+            $community_service[] = [
+                "event_id" => (int)$row["event_id"],
+                "event_name" => $row["event_name"],
+                "event_start_date" => $row["event_start_date"],
+                "event_end_date" => $row["event_end_date"],
+            ];
         }
     }
 

@@ -71,9 +71,10 @@ CREATE TABLE organizations (
 CREATE TABLE budget_deductions (
     budget_deduction_id INT PRIMARY KEY AUTO_INCREMENT,
     budget_deduction_title VARCHAR(50) NOT NULL,
-    budget_deduction_reason TEXT NOT NULL,
+    budget_deduction_reason TEXT NULL,
     budget_deduction_amount DECIMAL(10,2) NOT NULL,
-    budget_deduction_image_proof VARCHAR(50) NOT NULL,
+    budget_deduction_image_proof VARCHAR(50) NULL,
+    budget_deducted_at DATE,
     organization_id INT NOT NULL,
     FOREIGN KEY (organization_id) REFERENCES organizations(organization_id)
         ON DELETE CASCADE ON UPDATE CASCADE
@@ -126,44 +127,44 @@ CREATE TABLE organization_officers (
 -- ================================
 -- NOTIFICATIONS
 -- ================================
-CREATE TABLE notifications (
-    notification_id INT PRIMARY KEY AUTO_INCREMENT,
-    notification_type VARCHAR(20) NOT NULL, -- event, sanction, system, etc.
-    notification_content TEXT NOT NULL,
-    url_redirect VARCHAR(255) NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-) AUTO_INCREMENT = 1001;
-
--- Who should receive it (audience definition)
-CREATE TABLE notification_targets (
-    target_id INT PRIMARY KEY AUTO_INCREMENT,
-    notification_id INT NOT NULL,
-    scope ENUM('user','role','org','global') NOT NULL,
-    year_levels SET('1','2','3','4') NOT NULL DEFAULT '1,2,3,4',
-    user_id INT NULL,
-    role_id INT NULL,
-    organization_id INT NULL,
-    FOREIGN KEY (notification_id) REFERENCES notifications(notification_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (role_id) REFERENCES roles(role_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (organization_id) REFERENCES organizations(organization_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) AUTO_INCREMENT = 1001;
-
--- Track which users read it
-CREATE TABLE notification_reads (
-    read_id INT PRIMARY KEY AUTO_INCREMENT,
-    notification_id INT NOT NULL,
-    user_id INT NOT NULL,
-    read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (notification_id) REFERENCES notifications(notification_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-) AUTO_INCREMENT = 1001;
+-- CREATE TABLE notifications (
+--     notification_id INT PRIMARY KEY AUTO_INCREMENT,
+--     notification_type VARCHAR(20) NOT NULL, -- event, sanction, system, etc.
+--     notification_content TEXT NOT NULL,
+--     url_redirect VARCHAR(255) NOT NULL,
+--     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- ) AUTO_INCREMENT = 1001;
+-- 
+-- -- Who should receive it (audience definition)
+-- CREATE TABLE notification_targets (
+--     target_id INT PRIMARY KEY AUTO_INCREMENT,
+--     notification_id INT NOT NULL,
+--     scope ENUM('user','role','org','global') NOT NULL,
+--     year_levels SET('1','2','3','4') NOT NULL DEFAULT '1,2,3,4',
+--     user_id INT NULL,
+--     role_id INT NULL,
+--     organization_id INT NULL,
+--     FOREIGN KEY (notification_id) REFERENCES notifications(notification_id)
+--         ON DELETE CASCADE ON UPDATE CASCADE,
+--     FOREIGN KEY (user_id) REFERENCES users(user_id)
+--         ON DELETE CASCADE ON UPDATE CASCADE,
+--     FOREIGN KEY (role_id) REFERENCES roles(role_id)
+--         ON DELETE CASCADE ON UPDATE CASCADE,
+--     FOREIGN KEY (organization_id) REFERENCES organizations(organization_id)
+--         ON DELETE CASCADE ON UPDATE CASCADE
+-- ) AUTO_INCREMENT = 1001;
+-- 
+-- -- Track which users read it
+-- CREATE TABLE notification_reads (
+--     read_id INT PRIMARY KEY AUTO_INCREMENT,
+--     notification_id INT NOT NULL,
+--     user_id INT NOT NULL,
+--     read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (notification_id) REFERENCES notifications(notification_id)
+--         ON DELETE CASCADE ON UPDATE CASCADE,
+--     FOREIGN KEY (user_id) REFERENCES users(user_id)
+--         ON DELETE CASCADE ON UPDATE CASCADE
+-- ) AUTO_INCREMENT = 1001;
 
 
 -- ================================
@@ -256,6 +257,7 @@ CREATE TABLE attendance_excuse (
     attendance_excuse_reason TEXT,
     attendance_excuse_proof_file VARCHAR(255),
     attendance_excuse_status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
+    attendance_excuse_submitted_at DATE NOT NULL,
     event_attend_date_id INT NOT NULL,
     student_id INT NOT NULL,
     FOREIGN KEY (event_attend_date_id) REFERENCES event_attendance_dates(event_attend_date_id)
@@ -268,30 +270,30 @@ CREATE TABLE attendance_excuse (
 -- ONLINE PAYMENTS FOR CONTRIBUTIONS AND ATTENDANCE SANCTIONS
 -- ================================
 
-CREATE TABLE online_payments (
-    online_payment_id INT AUTO_INCREMENT PRIMARY KEY,
-    reference_no VARCHAR(100) NOT NULL, -- GCash/Bank ref
-    method VARCHAR(50) NOT NULL,        -- GCash, Bank Transfer, etc.
-    proof_url TEXT,                     -- optional proof image/file
-    payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('PENDING','APPROVED','REJECTED') DEFAULT 'PENDING'
-);
-
-CREATE TABLE online_payment_attendance_sanctions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    online_payment_id INT NOT NULL,
-    paid_attend_sanction_id INT NOT NULL,
-    FOREIGN KEY (online_payment_id) REFERENCES online_payments(online_payment_id),
-    FOREIGN KEY (paid_attend_sanction_id) REFERENCES paid_attendance_sanctions(paid_attend_sanction_id)
-);
-
-CREATE TABLE online_payment_contributions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    online_payment_id INT NOT NULL,
-    contribution_id INT NOT NULL,
-    FOREIGN KEY (online_payment_id) REFERENCES online_payments(online_payment_id),
-    FOREIGN KEY (contribution_id) REFERENCES contributions_made(contribution_id)
-);
+-- CREATE TABLE online_payments (
+--     online_payment_id INT AUTO_INCREMENT PRIMARY KEY,
+--     reference_no VARCHAR(100) NOT NULL, -- GCash/Bank ref
+--     method VARCHAR(50) NOT NULL,        -- GCash, Bank Transfer, etc.
+--     proof_url TEXT,                     -- optional proof image/file
+--     payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+--     status ENUM('PENDING','APPROVED','REJECTED') DEFAULT 'PENDING'
+-- );
+-- 
+-- CREATE TABLE online_payment_attendance_sanctions (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     online_payment_id INT NOT NULL,
+--     paid_attend_sanction_id INT NOT NULL,
+--     FOREIGN KEY (online_payment_id) REFERENCES online_payments(online_payment_id),
+--     FOREIGN KEY (paid_attend_sanction_id) REFERENCES paid_attendance_sanctions(paid_attend_sanction_id)
+-- );
+-- 
+-- CREATE TABLE online_payment_contributions (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     online_payment_id INT NOT NULL,
+--     contribution_id INT NOT NULL,
+--     FOREIGN KEY (online_payment_id) REFERENCES online_payments(online_payment_id),
+--     FOREIGN KEY (contribution_id) REFERENCES contributions_made(contribution_id)
+-- );
 
 -- ================================
 -- PROGRAM HISTORY & COMSERV

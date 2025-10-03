@@ -70,39 +70,76 @@ try {
     ]);
 
     // Contribution handling (if present in payload)
-    if (isset($input['contribution'])) {
-        // Check payments already made against this event's contributions:
-        $stmt_check_payments = $pdo->prepare("
-            SELECT 
-                (SELECT COUNT(*) FROM contributions_made cm JOIN event_contributions ec ON cm.event_contri_id = ec.event_contri_id WHERE ec.event_id = :event_id) +
-                (SELECT COUNT(*) FROM paid_contribution_sanctions pcs JOIN event_contributions ec2 ON pcs.event_contri_id = ec2.event_contri_id WHERE ec2.event_id = :event_id)
-            AS total_payments
-        ");
-        $stmt_check_payments->execute([":event_id" => $event_id]);
-        $payments_count = (int) $stmt_check_payments->fetchColumn();
+	if (isset($input['contribution'])) {
+	    $c = $input['contribution'];
 
-        if ($payments_count > 0) {
-            throw new Exception("Cannot edit contribution: payments already exist for this event.");
-        }
+	    // Default due date fallback
+	    if (empty($c['event_contri_due_date'])) {
+	        $c['event_contri_due_date'] = $input['event_start_date'] ?? $event['event_start_date'];
+	    }
 
-        // Safe to replace contribution: delete old and insert new (if provided)
-        $pdo->prepare("DELETE FROM event_contributions WHERE event_id = :event_id")->execute([":event_id" => $event_id]);
+	    // Check if contribution already exists for this event
+	    $stmt_check_contri = $pdo->prepare("
+	        SELECT event_contri_id, event_contri_due_date, event_contri_fee, event_contri_sanction_fee
+	        FROM event_contributions 
+	        WHERE event_id = :event_id 
+	        LIMIT 1
+	    ");
+	    $stmt_check_contri->execute([":event_id" => $event_id]);
+	    $existing_contri = $stmt_check_contri->fetch(PDO::FETCH_ASSOC);
 
-        $c = $input['contribution'];
-        $stmt_insert_contri = $pdo->prepare("
-            INSERT INTO event_contributions (event_contri_due_date, event_contri_fee, event_contri_sanction_fee, event_id)
-            VALUES (:due_date, :fee, :sanction_fee, :event_id)
-        ");
-		if (empty($c['event_contri_due_date'])) {
-			$c['event_contri_due_date'] = $input['event_start_date'];
-		}
-        $stmt_insert_contri->execute([
-            ":due_date" => $c['event_contri_due_date'],
-            ":fee" => isset($c['event_contri_fee']) ? $c['event_contri_fee'] : 0,
-            ":sanction_fee" => isset($c['event_contri_sanction_fee']) ? $c['event_contri_sanction_fee'] : 0,
-            ":event_id" => $event_id
-        ]);
-    }
+	    if ($existing_contri) {
+	        $same_values =
+	            $existing_contri['event_contri_due_date'] == $c['event_contri_due_date'] &&
+	            $existing_contri['event_contri_fee'] == ($c['event_contri_fee'] ?? 0) &&
+	            $existing_contri['event_contri_sanction_fee'] == ($c['event_contri_sanction_fee'] ?? 0);
+
+	        if (!$same_values) {
+	            // Check payments already made
+	            $stmt_check_payments = $pdo->prepare("
+	                SELECT COUNT(*) 
+	                FROM contributions_made cm 
+	                JOIN event_contributions ec ON cm.event_contri_id = ec.event_contri_id 
+	                WHERE ec.event_id = :event_id
+	            ");
+	            $stmt_check_payments->execute([":event_id" => $event_id]);
+	            $payments_count = (int) $stmt_check_payments->fetchColumn();
+
+	            if ($payments_count > 0) {
+	                throw new Exception("Cannot edit contribution: payments already exist for this event.");
+	            }
+
+	            // Update existing contribution
+	            $stmt_update_contri = $pdo->prepare("
+	                UPDATE event_contributions 
+	                SET event_contri_due_date = :due_date,
+	                    event_contri_fee = :fee,
+	                    event_contri_sanction_fee = :sanction_fee
+	                WHERE event_contri_id = :id
+	            ");
+	            $stmt_update_contri->execute([
+	                ":due_date" => $c['event_contri_due_date'],
+	                ":fee" => $c['event_contri_fee'] ?? 0,
+	                ":sanction_fee" => $c['event_contri_sanction_fee'] ?? 0,
+	                ":id" => $existing_contri['event_contri_id']
+	            ]);
+	        }
+	    } else {
+	        // Insert new contribution
+	        $stmt_insert_contri = $pdo->prepare("
+	            INSERT INTO event_contributions 
+	                (event_contri_due_date, event_contri_fee, event_contri_sanction_fee, event_id)
+	            VALUES (:due_date, :fee, :sanction_fee, :event_id)
+	        ");
+	        $stmt_insert_contri->execute([
+	            ":due_date" => $c['event_contri_due_date'],
+	            ":fee" => $c['event_contri_fee'] ?? 0,
+	            ":sanction_fee" => $c['event_contri_sanction_fee'] ?? 0,
+	            ":event_id" => $event_id
+	        ]);
+	    }
+	}
+
 
     // Attendance handling (if present in payload)
 	if (isset($input['attendance'])) {

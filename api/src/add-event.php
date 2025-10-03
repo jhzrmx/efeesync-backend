@@ -93,6 +93,7 @@ try {
     }
 
     //Insert notification for org members
+    /*
     $stmt = $pdo->prepare("
         INSERT INTO notifications (notification_type, notification_content, url_redirect)
         VALUES (:type, :content, :url)
@@ -119,6 +120,7 @@ try {
         ":org_id"          => $organization_id,
         ":year_levels"     => $year_levels
     ]);
+    */
 
     $pdo->commit();
 

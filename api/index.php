@@ -40,6 +40,7 @@ Route::get("/roles", "src/get-roles.php");
 // ROUTES: USER
 Route::get("/users/current", "src/get-current-user.php");
 Route::put("/users/current/password", "src/edit-current-user-password.php");
+Route::put("/users/current/name", "src/edit-current-name-user.php");
 Route::post("/users/picture/:id", "src/edit-user-picture.php");
 Route::delete("/users/picture/:id", "src/delete-user-picture.php");
 
@@ -112,15 +113,19 @@ Route::delete("/organizations/code/:organization_code/events/:id", "src/delete-e
 // ROUTES: ORGANIZATION FINANCIAL REPORTS
 Route::get("/organizations/:organization_id/financialreport", "src/get-organization-financial-report.php");
 Route::get("/organizations/code/:organization_code/financialreport", "src/get-organization-financial-report.php");
+Route::post("/organizations/:organization_id/budget/deduct", "src/add-budget-deduction.php");
+Route::post("/organizations/code/:organization_code/budget/deduct", "src/add-budget-deduction.php");
+Route::put("/budget/deduct/:id", "src/edit-budget-deduction.php");
+Route::delete("/budget/deduct/:id", "src/delete-budget-deduction.php");
 
 // ROUTES: EVENTS (SPECIFIED ID)
 // UNIMPLEMENTED Route::get("/events/:id", "src/get-events.php");
 // UNIMPLEMENTED Route::put("/events/:id", "src/edit-event.php");
 Route::delete("/events/:id", "src/delete-event.php");
 
-// ROUTES: ORGANIZATION > SANCTIONS OF ALL STUDENTS
-Route::get("/organizations/:organization_id/sanctions", "src/get-organization-sanctions.php");
-Route::get("/organizations/code/:organization_code/sanctions", "src/get-organization-sanctions.php");
+// ROUTES: ORGANIZATION > SANCTIONS AND UNSETTLED OF ALL STUDENTS
+Route::get("/organizations/:organization_id/unsettledandsanctions", "src/get-organization-student-unsettled-and-sanctions.php");
+Route::get("/organizations/code/:organization_code/unsettledandsanctions", "src/get-organization-student-unsettled-and-sanctions.php");
 
 // ROUTES: EVENT > ATTENDANCES
 // ATTENDANCE MADE
@@ -135,6 +140,9 @@ Route::delete("/events/:id/attendance/:date/:time/:inout/number/:student_number_
 // ADD EXCUSE ATTENDANCE
 Route::put("/events/:id/attendance/:date/:student_id", "src/add-excuse-attendance.php");
 Route::put("/events/:id/attendance/:date/number/:student_number_id", "src/add-excuse-attendance.php");
+// ADD ATTENDANCE SANCTION (UNIMPLEMENTED)
+Route::post("/events/:id/attendance/sanctions/collect/:student_id", "src/add-attendance-paid-sanction.php");
+Route::post("/events/:id/attendance/sanctions/collect/number/:student_number_id", "src/add-attendance-paid-sanction.php");
 
 // ROUTES: EVENT > CONTRIBUTIONS
 // CONTRIBUTIONS
@@ -145,6 +153,10 @@ Route::post("/events/:id/contributions/number/:student_number_id", "src/add-cont
 // REVOKE CONTRIBUTION
 Route::delete("/events/:id/contributions/:student_id", "src/delete-contribution.php"); 
 Route::delete("/events/:id/contributions/number/:student_number_id", "src/delete-contribution.php");
+
+// ROUTES: ORGANIZATION EVENT ATTENDANCE EXCUSES
+Route::get("/organizations/:id/attendance/excuses", "src/get-organization-attendance-excuse.php");
+Route::get("/organizations/code/:code/attendance/excuses", "src/get-organization-attendance-excuse.php");
 
 // ROUTES: STUDENTS
 Route::get("/students", "src/get-students.php"); // Optional query parameter: page, per_page, search
@@ -176,6 +188,9 @@ Route::get("/departments/:department_id/students", "src/get-students.php");
 Route::get("/departments/:department_id/students/search/:search", "src/get-students.php");
 Route::get("/departments/code/:department_code/students", "src/get-students.php");
 Route::get("/departments/code/:department_code/students/search/:search", "src/get-students.php");
+
+// ROUTE: IMPORT CSV
+Route::post("/import/csv", "src/import-students-csv.php");
 
 // ROUTE: NOTIFICATIONS
 Route::post("/notifications/:id", "src/notifications-read.php");

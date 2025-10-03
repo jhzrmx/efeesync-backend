@@ -143,11 +143,17 @@ try {
         FROM events e
         JOIN event_attendance_dates ead ON e.event_id = ead.event_id
         JOIN event_attendance_times eat ON ead.event_attend_date_id = eat.event_attend_date_id
+        JOIN organizations o ON e.organization_id = o.organization_id
         WHERE eat.event_attend_sanction_fee > 0
+            AND (
+                  o.department_id IS NULL -- university-wide
+                  OR o.department_id = :dept_id -- department-based
+                )
+            AND FIND_IN_SET(:student_year, e.event_target_year_levels)
         GROUP BY e.event_id
     ";
     $as_stmt = $pdo->prepare($attend_sanction_sql);
-    $as_stmt->execute([":sid" => $student_id]);
+    $as_stmt->execute([":sid" => $student_id, ":dept_id" => $dept_id, ":student_year" => $student_year]);
     foreach ($as_stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         if ($row["sanction_paid"] < $row["event_attend_sanction_fee"]) {
             $num_active_sanctions++;

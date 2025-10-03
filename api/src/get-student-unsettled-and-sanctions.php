@@ -48,10 +48,6 @@ try {
         LEFT JOIN contributions_made cm 
             ON cm.event_contri_id = ec.event_contri_id 
            AND cm.student_id = ?
-		-- LEFT JOIN paid_contribution_sanctions pcs
-        --     ON pcs.event_contri_id = ec.event_contri_id
-		--    AND pcs.payment_status = 'APPROVED'
-        --    AND pcs.student_id = ?
         WHERE FIND_IN_SET(LEFT(?, 1), e.event_target_year_levels) > 0
         GROUP BY e.event_id, e.event_name, ec.event_contri_fee, ec.event_contri_sanction_fee, e.event_end_date
     ";

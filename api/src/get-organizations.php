@@ -15,8 +15,7 @@ try {
     $syStart = $sy["start"];
     $syEnd   = $sy["end"];
 
-    $sql = "
-        SELECT 
+    $sql = "SELECT 
             o.organization_id,
             o.organization_code,
             o.organization_name,
@@ -28,71 +27,63 @@ try {
             -- Budget initial
             o.budget_initial_calibration AS budget_initial,
 
-            -- Total deductions
-            IFNULL(SUM(bd.budget_deduction_amount),0) AS total_deductions,
+            -- Deductions
+            IFNULL(bd.total_deductions,0) AS total_deductions,
 
-            -- Total paid (sanctions + contributions)
-            (
-                IFNULL(SUM(pas.amount_paid),0) + 
-                IFNULL(SUM(cm.amount_paid),0)
-            ) AS total_paid,
+            -- Payments
+            IFNULL(paid.total_paid,0) AS total_paid,
 
             -- Compute total budget
             (
                 o.budget_initial_calibration
-                + IFNULL(SUM(pas.amount_paid),0) 
-                + IFNULL(SUM(cm.amount_paid),0)
-                - IFNULL(SUM(bd.budget_deduction_amount),0)
+                + IFNULL(paid.total_paid,0)
+                - IFNULL(bd.total_deductions,0)
             ) AS total_budget,
 
-            -- Cash on hand (only current SY events)
-            (
-                IFNULL(SUM(
-                    CASE 
-                        WHEN e.event_start_date BETWEEN :syStart AND :syEnd 
-                        THEN pas.amount_paid ELSE 0 END
-                ),0)
-                +
-                IFNULL(SUM(
-                    CASE 
-                        WHEN e.event_start_date BETWEEN :syStart AND :syEnd 
-                        THEN cm.amount_paid ELSE 0 END
-                ),0)
-            ) AS cash_on_hand
+            -- Cash on hand (SY limited)
+            IFNULL(paid_sy.cash_on_hand,0) AS cash_on_hand
 
         FROM organizations o
         LEFT JOIN departments d 
             ON d.department_id = o.department_id
 
-        -- Budget deductions
-        LEFT JOIN budget_deductions bd 
-            ON bd.organization_id = o.organization_id
+        -- Subquery: deductions
+        LEFT JOIN (
+            SELECT organization_id, SUM(budget_deduction_amount) AS total_deductions
+            FROM budget_deductions
+            GROUP BY organization_id
+        ) bd ON bd.organization_id = o.organization_id
 
-        -- Events
-        LEFT JOIN events e 
-            ON e.organization_id = o.organization_id
+        -- Subquery: total paid
+        LEFT JOIN (
+            SELECT e.organization_id, 
+                   SUM(pas.amount_paid) + SUM(cm.amount_paid) AS total_paid
+            FROM events e
+            LEFT JOIN paid_attendance_sanctions pas 
+                ON pas.event_id = e.event_id AND pas.payment_status='APPROVED'
+            LEFT JOIN event_contributions ec 
+                ON ec.event_id = e.event_id
+            LEFT JOIN contributions_made cm 
+                ON cm.event_contri_id = ec.event_contri_id AND cm.payment_status='APPROVED'
+            GROUP BY e.organization_id
+        ) paid ON paid.organization_id = o.organization_id
 
-        -- Attendance sanctions paid
-        LEFT JOIN paid_attendance_sanctions pas 
-            ON pas.event_id = e.event_id 
-           AND pas.payment_status = 'APPROVED'
-
-        -- Contributions paid (via event_contributions)
-        LEFT JOIN event_contributions ec 
-            ON ec.event_id = e.event_id
-        LEFT JOIN contributions_made cm 
-            ON cm.event_contri_id = ec.event_contri_id
-           AND cm.payment_status = 'APPROVED'
-
-        GROUP BY 
-            o.organization_id, 
-            o.organization_code, 
-            o.organization_name, 
-            o.organization_logo, 
-            o.department_id, 
-            d.department_color, 
-            d.department_code
-    ";
+        -- Subquery: cash on hand (SY only)
+        LEFT JOIN (
+            SELECT e.organization_id, 
+                   SUM(CASE WHEN e.event_start_date BETWEEN :syStart AND :syEnd THEN pas.amount_paid ELSE 0 END)
+                   + SUM(CASE WHEN e.event_start_date BETWEEN :syStart AND :syEnd THEN cm.amount_paid ELSE 0 END) 
+                   AS cash_on_hand
+            FROM events e
+            LEFT JOIN paid_attendance_sanctions pas 
+                ON pas.event_id = e.event_id AND pas.payment_status='APPROVED'
+            LEFT JOIN event_contributions ec 
+                ON ec.event_id = e.event_id
+            LEFT JOIN contributions_made cm 
+                ON cm.event_contri_id = ec.event_contri_id AND cm.payment_status='APPROVED'
+            GROUP BY e.organization_id
+        ) paid_sy ON paid_sy.organization_id = o.organization_id
+        ";
 
     if (isset($id)) {
         $sql .= " HAVING organization_id = :organization_id";

@@ -5,7 +5,7 @@ require_once "_get_school_year_range.php";
 
 header("Content-Type: application/json");
 
-require_role(["admin", "treasurer"]);
+require_login();
 
 $response = ["status" => "error"];
 
@@ -33,7 +33,7 @@ try {
 
     // --- CASH-IN: Contributions per event ---
     $sqlContri = "
-        SELECT e.event_id, e.event_name,
+        SELECT e.event_id, e.event_name, e.event_end_date,
                COALESCE(SUM(cm.amount_paid), 0) AS total_contributions
         FROM events e
         LEFT JOIN event_contributions ec ON ec.event_id = e.event_id
@@ -42,6 +42,7 @@ try {
         WHERE e.organization_id = :org_id
           AND e.event_start_date BETWEEN :syStart AND :syEnd
         GROUP BY e.event_id, e.event_name
+        ORDER BY e.event_end_date DESC
     ";
     $stmt = $pdo->prepare($sqlContri);
     $stmt->execute([
@@ -53,7 +54,7 @@ try {
 
     // --- CASH-IN: Attendance sanctions per event ---
     $sqlSanctions = "
-        SELECT e.event_id, e.event_name,
+        SELECT e.event_id, e.event_name, e.event_end_date,
                COALESCE(SUM(pas.amount_paid), 0) AS total_sanctions
         FROM events e
         LEFT JOIN paid_attendance_sanctions pas 
@@ -61,6 +62,7 @@ try {
         WHERE e.organization_id = :org_id
           AND e.event_start_date BETWEEN :syStart AND :syEnd
         GROUP BY e.event_id, e.event_name
+        ORDER BY e.event_end_date DESC
     ";
     $stmt = $pdo->prepare($sqlSanctions);
     $stmt->execute([
@@ -73,20 +75,22 @@ try {
     // Merge cash-in per event (contri + sanctions)
     $cashIn = [];
     foreach ($contriData as $row) {
+        if ((float)$row["total_contributions"] == 0) continue;
         $cashIn[$row["event_id"]] = [
             "event_id" => $row["event_id"],
             "event_name" => $row["event_name"],
+            "event_end_date" => $row["event_end_date"],
             "total_contributions" => (float)$row["total_contributions"],
-            "total_sanctions" => 0,
             "total_cash_in" => (float)$row["total_contributions"]
         ];
     }
     foreach ($sanctionData as $row) {
+        if ((float)$row["total_sanctions"] == 0 ) continue;
         if (!isset($cashIn[$row["event_id"]])) {
             $cashIn[$row["event_id"]] = [
                 "event_id" => $row["event_id"],
                 "event_name" => $row["event_name"],
-                "total_contributions" => 0,
+                "event_end_date" => $row["event_end_date"],
                 "total_sanctions" => (float)$row["total_sanctions"],
                 "total_cash_in" => (float)$row["total_sanctions"]
             ];
@@ -98,13 +102,12 @@ try {
 
     // --- CASH-OUT: Budget deductions ---
     $sqlDeduct = "
-        SELECT budget_deduction_id, budget_deduction_title, budget_deduction_reason,
-               budget_deduction_amount, budget_deduction_image_proof
+        SELECT budget_deduction_id, budget_deduction_title, budget_deduction_amount, budget_deducted_at
         FROM budget_deductions
-        WHERE organization_id = :org_id
+        WHERE organization_id = :org_id AND budget_deducted_at BETWEEN :syStart AND :syEnd
     ";
     $stmt = $pdo->prepare($sqlDeduct);
-    $stmt->execute([":org_id" => $id]);
+    $stmt->execute([":org_id" => $id, ":syStart" => $syStart, ":syEnd" => $syEnd]);
     $cashOut = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // --- Summaries ---
