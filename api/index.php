@@ -26,7 +26,8 @@ if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") {
 }
 
 // APPEND /api
-Route::enableBasePath();
+// Route::enableBasePath();
+Route::setBasePath("/api");
 
 // ROUTES: BASIC AUTH
 Route::post("/check-roles", "src/check-roles.php");
@@ -140,7 +141,7 @@ Route::delete("/events/:id/attendance/:date/:time/:inout/number/:student_number_
 // ADD EXCUSE ATTENDANCE
 Route::put("/events/:id/attendance/:date/:student_id", "src/add-excuse-attendance.php");
 Route::put("/events/:id/attendance/:date/number/:student_number_id", "src/add-excuse-attendance.php");
-// ADD ATTENDANCE SANCTION (UNIMPLEMENTED)
+// ADD ATTENDANCE SANCTION
 Route::post("/events/:id/attendance/sanctions/collect/:student_id", "src/add-attendance-paid-sanction.php");
 Route::post("/events/:id/attendance/sanctions/collect/number/:student_number_id", "src/add-attendance-paid-sanction.php");
 
@@ -157,6 +158,15 @@ Route::delete("/events/:id/contributions/number/:student_number_id", "src/delete
 // ROUTES: ORGANIZATION EVENT ATTENDANCE EXCUSES
 Route::get("/organizations/:id/attendance/excuses", "src/get-organization-attendance-excuse.php");
 Route::get("/organizations/code/:code/attendance/excuses", "src/get-organization-attendance-excuse.php");
+
+// ROUTES: ORGANIZATION COMMUNITY SERVICES
+Route::get("/organizations/:id/communityservice", "src/get-organization-community-service.php");
+Route::get("/organizations/code/:code/communityservice", "src/get-organization-community-service.php");
+Route::post("/communityservice/events/:event_id/student/:id", "src/add-community-service.php");
+Route::post("/communityservice/events/:event_id/student/number/:student_number_id", "src/add-community-service.php");
+
+// ROUTES: EXCUSE REQUEST APPROVE/REJECT
+Route::post("/attendance/excuse/:id/:action", "src/edit-attendance-excuse-approve-reject.php");
 
 // ROUTES: STUDENTS
 Route::get("/students", "src/get-students.php"); // Optional query parameter: page, per_page, search
@@ -177,6 +187,16 @@ Route::get("/students/number/:student_number/unsettledandsanctions", "src/get-st
 Route::get("/students/current/attendance/sanction", "src/get-current-student-attendance-sanctions.php");
 Route::get("/students/current/attendance/status", "src/get-current-student-attendance-attended-excused.php");
 Route::get("/students/current/contribution/status", "src/get-current-student-contribution-status.php");
+
+// STUDENT EXCUSES IF LOGGED IN
+Route::get("/students/current/excuses", "src/get-current-student-attendance-excuses.php");
+Route::post("/students/current/excuses/event/:id/date/:date", "src/add-student-attendance-excuse.php");
+Route::post("/students/current/excuses/:id", "src/edit-student-attendance-excuse.php");
+Route::delete("/students/current/excuses/:id", "src/delete-student-attendance-excuse.php");
+
+// STUDENT SECTION
+Route::put("/students/current/section", "src/edit-current-student-section.php");
+
 // STUDENT ONLINE PAYMENTS IF LOGGED IN (UNIMPLEMENTED)
 // Route::get("/students/onlinepayments", "src/get-student-online-payments.php");
 // Route::post("/students/onlinepayments", "src/add-student-online-payment.php");
@@ -190,10 +210,10 @@ Route::get("/departments/code/:department_code/students", "src/get-students.php"
 Route::get("/departments/code/:department_code/students/search/:search", "src/get-students.php");
 
 // ROUTE: IMPORT CSV
-Route::post("/import/csv", "src/import-students-csv.php");
+Route::post("/import/csv", "src/import-students-csv.php"); // form data
 
 // ROUTE: NOTIFICATIONS
-Route::post("/notifications/:id", "src/notifications-read.php");
+// Route::post("/notifications/:id", "src/notifications-read.php");
 
 // ROUTE: 404
 Route::add404("src/not-found.php");

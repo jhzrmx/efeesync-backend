@@ -11,6 +11,7 @@ $response = ["status" => "error"];
 try {
     // query params
     $search   = $_GET['search'] ?? null;
+    $status   = $_GET['status'] ?? null; // filter by status like APPROVED, PENDING, REJECTED, default is none (display all)
     $page     = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
     $per_page = isset($_GET['per_page']) ? max(1, intval($_GET['per_page'])) : 10;
     $offset   = ($page - 1) * $per_page;
@@ -38,10 +39,10 @@ try {
     }
 
     // base SQL
-    $baseSql = "FROM attendance_excuse ae
+    $baseSql = "
+            FROM attendance_excuse ae
             INNER JOIN students s 
                 ON s.student_id = ae.student_id 
-                -- AND ae.attendance_excuse_proof_file IS NOT NULL
             INNER JOIN users u 
                 ON s.user_id = u.user_id
             INNER JOIN event_attendance_dates ed 
@@ -52,10 +53,20 @@ try {
                 ON o.organization_id = e.organization_id
             LEFT JOIN departments d 
                 ON d.department_id = o.department_id
-            WHERE (e.organization_id = :organization_id OR o.department_id IS NULL)";
+            WHERE (e.organization_id = :organization_id OR o.department_id IS NULL)
+                AND ae.attendance_excuse_proof_file IS NOT NULL
+    ";
+
+    // params
+    $params = [":organization_id" => $organization_id];
+
+    // apply status filter if provided
+    if ($status) {
+        $baseSql .= " AND ae.attendance_excuse_status = :status";
+        $params[":status"] = $status;
+    }
 
     // apply search
-    $params = [":organization_id" => $organization_id];
     if ($search) {
         $baseSql .= " AND (u.first_name LIKE :search 
                         OR u.last_name LIKE :search 
@@ -77,7 +88,8 @@ try {
                 ae.attendance_excuse_reason,
                 ae.attendance_excuse_status,
                 ae.attendance_excuse_proof_file,
-                DATE_FORMAT(ae.attendance_excuse_submitted_at, '%m/%d/%Y') AS submitted_at,
+                -- DATE_FORMAT(ae.attendance_excuse_submitted_at, '%m/%d/%Y') AS submitted_at,
+                ae.attendance_excuse_submitted_at submitted_at,
                 ae.student_id,
                 s.student_number_id,
                 s.student_section,
@@ -88,9 +100,9 @@ try {
                 END AS full_name,
                 e.event_id,
                 e.event_name,
-                DATE_FORMAT(ed.event_attend_date, '%m/%d/%Y') AS event_date,
+                -- DATE_FORMAT(ed.event_attend_date, '%m/%d/%Y') AS event_date,
+                ed.event_attend_date AS event_date,
                 ed.event_attend_date_id
-
             $baseSql
             ORDER BY e.event_id, ed.event_attend_date, ae.attendance_excuse_submitted_at
             LIMIT :limit OFFSET :offset";

@@ -70,6 +70,7 @@ try {
                 e.event_description,
                 e.event_start_date,
                 e.event_end_date,
+                e.is_separate_day,
                 e.event_target_year_levels,
                 e.event_picture,
                 e.event_sanction_has_comserv

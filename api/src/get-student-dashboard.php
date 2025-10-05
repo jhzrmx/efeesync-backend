@@ -34,7 +34,7 @@ try {
     $dept_id = $student["department_id"];
 
     // ===============================
-    // Upcoming events 
+    // Upcoming events with contribution + attendance
     // ===============================
     $sql = "SELECT 
                 e.event_id, 
@@ -43,13 +43,13 @@ try {
                 e.event_end_date, 
                 e.event_target_year_levels, 
                 o.organization_name,
-                CASE 
-                    WHEN EXISTS (SELECT 1 FROM event_contributions ec WHERE ec.event_id = e.event_id) 
-                         AND EXISTS (SELECT 1 FROM event_attendance_dates ead WHERE ead.event_id = e.event_id) 
+                CASE WHEN EXISTS
+                    (SELECT 1 FROM event_contributions ec WHERE ec.event_id = e.event_id)
+                    AND EXISTS (SELECT 1 FROM event_attendance_dates ead WHERE ead.event_id = e.event_id)
                     THEN 'Attendance and Contribution'
-                    WHEN EXISTS (SELECT 1 FROM event_contributions ec WHERE ec.event_id = e.event_id) 
+                    WHEN EXISTS (SELECT 1 FROM event_contributions ec WHERE ec.event_id = e.event_id)
                     THEN 'Contribution'
-                    WHEN EXISTS (SELECT 1 FROM event_attendance_dates ead WHERE ead.event_id = e.event_id) 
+                    WHEN EXISTS (SELECT 1 FROM event_attendance_dates ead WHERE ead.event_id = e.event_id)
                     THEN 'Attendance'
                     ELSE 'None'
                 END AS event_type
@@ -61,13 +61,61 @@ try {
                     OR o.department_id = :dept_id -- department-based
                   )
               AND FIND_IN_SET(:student_year, e.event_target_year_levels)
-            ORDER BY e.event_end_date ASC";
+            ORDER BY e.event_end_date DESC";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ":dept_id" => $dept_id,
         ":student_year" => $student_year
     ]);
     $upcoming_events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // enhance each event
+    foreach ($upcoming_events as &$event) {
+        $event_id = $event["event_id"];
+
+        // 1. contribution
+        $contri_sql = "SELECT event_contri_fee 
+                       FROM event_contributions 
+                       WHERE event_id = ? 
+                       LIMIT 1";
+        $cstmt = $pdo->prepare($contri_sql);
+        $cstmt->execute([$event_id]);
+        $contri = $cstmt->fetch(PDO::FETCH_ASSOC);
+        $event["contribution"] = $contri ? (float)$contri["event_contri_fee"] : null;
+
+        // 2. attendance schedule
+        $attend_sql = "SELECT 
+                            ead.event_attend_date_id,
+                            ead.event_attend_date,
+                            eat.event_attend_time,
+                            eat.event_attend_sanction_fee
+                       FROM event_attendance_dates ead
+                       JOIN event_attendance_times eat 
+                            ON ead.event_attend_date_id = eat.event_attend_date_id
+                       WHERE ead.event_id = ?
+                       ORDER BY ead.event_attend_date, eat.event_attend_time";
+        $astmt = $pdo->prepare($attend_sql);
+        $astmt->execute([$event_id]);
+        $attendance_rows = $astmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $attendance_grouped = [];
+        foreach ($attendance_rows as $row) {
+            $date_id = $row["event_attend_date_id"];
+            if (!isset($attendance_grouped[$date_id])) {
+                $attendance_grouped[$date_id] = [
+                    "day_num" => count($attendance_grouped) + 1,
+                    "event_attend_date" => $row["event_attend_date"],
+                    "event_attend_time" => [],
+                    "event_attend_sanction_fee" => (float)$row["event_attend_sanction_fee"]
+                ];
+            }
+            $attendance_grouped[$date_id]["event_attend_time"][] = $row["event_attend_time"];
+        }
+
+        $event["attendance"] = array_values($attendance_grouped);
+    }
+
+    unset($event);
 
     // ===============================
     // Paid / Unpaid / Unsettled Contributions
@@ -105,30 +153,9 @@ try {
     }
 
     // ===============================
-    // Active Sanctions (contribution + attendance)
+    // Active Sanctions for attendance
     // ===============================
     $num_active_sanctions = 0;
-
-    /* Contribution sanctions
-    $contri_sanction_sql = "
-        SELECT 
-            ec.event_contri_sanction_fee,
-            (SELECT IFNULL(SUM(amount_paid),0) 
-             FROM paid_contribution_sanctions pcs
-             WHERE pcs.student_id = :sid 
-               AND pcs.event_contri_id = ec.event_contri_id 
-               AND pcs.payment_status = 'APPROVED') AS sanction_paid
-        FROM event_contributions ec
-        WHERE ec.event_contri_sanction_fee > 0
-    ";
-    $cs_stmt = $pdo->prepare($contri_sanction_sql);
-    $cs_stmt->execute([":sid" => $student_id]);
-    foreach ($cs_stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
-        if ($row["sanction_paid"] < $row["event_contri_sanction_fee"]) {
-            $num_active_sanctions++;
-        }
-    }
-    */
 
     // Attendance sanctions
     $attend_sanction_sql = "

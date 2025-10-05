@@ -36,9 +36,9 @@ try {
     $stmt = $pdo->prepare("
         INSERT INTO events 
             (organization_id, event_name, event_description, 
-             event_target_year_levels, event_start_date, event_end_date, 
-             event_sanction_has_comserv) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+             event_target_year_levels, event_start_date, event_end_date,  
+             is_separate_day, event_sanction_has_comserv) 
+        VALUES (?, ?, ?, ?, ?, ?, ?,?)
     ");
     $stmt->execute([
         $organization_id,
@@ -47,6 +47,7 @@ try {
         implode(",", $json_post_data["event_target_year_levels"]),
         $json_post_data["event_start_date"],
         $json_post_data["event_end_date"],
+        $json_post_data["is_separate_day"] ? 1 : 0,
         $json_post_data["event_sanction_has_comserv"] ? 1 : 0
     ]);
     $event_id = $pdo->lastInsertId();
@@ -127,7 +128,6 @@ try {
     $response["status"] = "success";
     $response["message"] = "Event created successfully";
     $response["event_id"] = $event_id;
-
 } catch (Exception $e) {
     $pdo->rollBack();
     $response["message"] = $e->getMessage();

@@ -90,6 +90,7 @@ CREATE TABLE events (
     event_target_year_levels SET('1','2','3','4') NOT NULL DEFAULT '1,2,3,4',
     event_start_date DATE NOT NULL,
     event_end_date DATE,
+    is_separate_day BOOLEAN NOT NULL DEFAULT FALSE,
     event_picture VARCHAR(255) DEFAULT 'default.jpg',
     event_sanction_has_comserv BOOLEAN NOT NULL DEFAULT FALSE,
     organization_id INT NOT NULL,
@@ -257,7 +258,7 @@ CREATE TABLE attendance_excuse (
     attendance_excuse_reason TEXT,
     attendance_excuse_proof_file VARCHAR(255),
     attendance_excuse_status ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
-    attendance_excuse_submitted_at DATE NOT NULL,
+    attendance_excuse_submitted_at DATE NOT NULL DEFAULT (CURRENT_DATE()),
     event_attend_date_id INT NOT NULL,
     student_id INT NOT NULL,
     FOREIGN KEY (event_attend_date_id) REFERENCES event_attendance_dates(event_attend_date_id)
@@ -315,6 +316,7 @@ CREATE TABLE community_service_made (
     comserv_id INT PRIMARY KEY AUTO_INCREMENT,
     student_id INT NOT NULL,
     event_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students(student_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (event_id) REFERENCES events(event_id)

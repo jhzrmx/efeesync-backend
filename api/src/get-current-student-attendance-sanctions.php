@@ -90,6 +90,9 @@ try {
         ORDER BY ead.event_attend_date, eat.event_attend_time_id
     ";
 
+    // Get the community service made for event
+    $comserv_made_sql = "SELECT * FROM community_service_made WHERE student_id = ? AND event_id = ?";
+
     foreach ($attend_rows as $row) {
         // Only process past events
         if (!empty($row['event_end_date']) && $row['event_end_date'] >= date('Y-m-d')) continue;
@@ -135,7 +138,11 @@ try {
             ];
         }
 
-        if ($row["event_sanction_has_comserv"] == 1) {
+        $comserv_made_stmt = $pdo->prepare($comserv_made_sql);
+        $comserv_made_stmt->execute([$student_id, $row["event_id"]]);
+        $comserv_made_rows = $comserv_made_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($row["event_sanction_has_comserv"] == 1 && !$comserv_made_rows) {
             $community_service[] = [
                 "event_id" => (int)$row["event_id"],
                 "event_name" => $row["event_name"],

@@ -110,6 +110,11 @@ try {
     $stmt->execute([":org_id" => $id, ":syStart" => $syStart, ":syEnd" => $syEnd]);
     $cashOut = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    foreach ($cashOut as &$row) {
+        $row["budget_deduction_amount"] = (float)$row["budget_deduction_amount"];
+    }
+    unset($row);
+
     // --- Summaries ---
     $totalCashIn = array_sum(array_column($cashIn, "total_cash_in"));
     $totalCashOut = array_sum(array_column($cashOut, "budget_deduction_amount"));

@@ -64,6 +64,7 @@ try {
         INSERT INTO student_programs_taken (student_id, program_id, start_date) 
         VALUES (?, ?, CURDATE())
     ");
+    
     $stmt->execute([
         $student_id,
         $json["student_current_program"]

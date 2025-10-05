@@ -8,29 +8,93 @@ header("Content-Type: application/json");
 // Require student role
 require_role(["student"]);
 
-$response = ["status" => "error"];
+// Route: POST /events/:id/date/:date
 
 try {
-    // Validate fields
-    if (empty($_POST["student_id"]) || empty($_POST["event_attend_date_id"]) || empty($_POST["attendance_excuse_reason"])) {
-        throw new Exception("Student ID, Event Attendance Date, and Reason are required.");
+    // --- Parameters ---
+    $event_id   = $id ?? null;
+    $dateexcuse = $date ?? null; // yyyy-mm-dd
+
+    if (!$event_id || !$dateexcuse) {
+        http_response_code(400);
+        echo json_encode(["status" => "error", "message" => "Missing parameters"]);
+        exit;
     }
 
-    $student_id = intval($_POST["student_id"]);
-    $event_attend_date_id = intval($_POST["event_attend_date_id"]);
-    $reason = trim($_POST["attendance_excuse_reason"]);
+    $current_user_id = current_jwt_payload()['user_id'];
+    $sql = "SELECT 
+                s.student_id, 
+                s.student_current_program, 
+                s.student_section,
+                p.department_id
+            FROM users u
+            JOIN students s ON s.user_id = u.user_id
+            JOIN programs p ON s.student_current_program = p.program_id
+            WHERE u.user_id = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$current_user_id]);
+    $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // File upload
-    $proof_file = null;
-    if (!empty($_FILES["attendance_excuse_proof_file"]["name"])) {
-        $file_name = time() . "_" . basename($_FILES["attendance_excuse_proof_file"]["name"]);
-        $target_file = $payment_proof_dir . $file_name;
+    if (!$student || !$student['student_id']) {
+        throw new Exception("This user is not a student");
+    }
 
-        if (!move_uploaded_file($_FILES["attendance_excuse_proof_file"]["tmp_name"], $target_file)) {
-            throw new Exception("Failed to upload proof file.");
-        }
+    $student_id = $student['student_id'];
 
-        $proof_file = $file_name;
+    // validate date format (yyyy-mm-dd)
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateexcuse)) {
+        throw new Exception("Invalid date format, expected yyyy-mm-dd");
+    }
+
+    // --- Check event_attend_date existence ---
+    $stmt = $pdo->prepare("
+        SELECT ead.event_attend_date_id
+        FROM event_attendance_dates ead
+        INNER JOIN events ev ON ev.event_id = ead.event_id
+        WHERE ev.event_id = ? AND ead.event_attend_date = ?
+        LIMIT 1
+    ");
+    $stmt->execute([$event_id, $dateexcuse]);
+    $eventDate = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$eventDate) {
+        throw new Exception("Event attendance date not found for given event and date");
+    }
+
+    $event_attend_date_id = $eventDate['event_attend_date_id'];
+
+    // --- File upload handling ---
+    if (!isset($_FILES['proof_file'])) {
+        throw new Exception("No file uploaded");
+    }
+
+    $file      = $_FILES['proof_file'];
+    $maxSize   = 5 * 1024 * 1024; // 5MB limit
+    $allowed   = ['jpg','jpeg','png','pdf'];
+    $uploadDir = $excuse_proof_dir;
+
+    // ensure directory exists
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+
+    if ($file['error'] !== UPLOAD_ERR_OK) throw new Exception("File upload error");
+
+    if ($file['size'] > $maxSize) throw new Exception("File size exceeds 5MB");
+
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowed)) throw new Exception("Invalid file type");
+
+    // secure filename: studentID_eventID_date_timestamp.ext
+    $newName = "excuse_" . $student_id . "_" . $event_id . "_" . $dateexcuse . "_" . time() . "." . $ext;
+    $destPath = $uploadDir . $newName;
+
+    if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+        throw new Exception("Failed to save file");
+    }
+
+    // --- Save excuse to DB ---
+    $reason = $_POST['reason'] ?? null;
+    if (!$reason) {
+        throw new Exception("Reason is required");
     }
 
     // Prevent duplicate excuse
@@ -40,18 +104,25 @@ try {
         throw new Exception("Excuse already filed for this event date.");
     }
 
-    // Insert excuse
-    $stmt = $pdo->prepare("INSERT INTO attendance_excuse 
-        (attendance_excuse_reason, attendance_excuse_proof_file, student_id, event_attend_date_id, attendance_excuse_status) 
-        VALUES (?, ?, ?, ?, 'PENDING')");
-    $stmt->execute([$reason, $proof_file, $student_id, $event_attend_date_id]);
+    $stmt = $pdo->prepare("
+        INSERT INTO attendance_excuse
+        (attendance_excuse_reason, attendance_excuse_proof_file, event_attend_date_id, student_id, attendance_excuse_submitted_at)
+        VALUES (?, ?, ?, ?, NOW())
+    ");
+    $stmt->execute([$reason, $newName, $event_attend_date_id, $student_id]);
 
-    $response["status"] = "success";
-    $response["message"] = "Excuse submitted successfully.";
-
+    echo json_encode([
+        "status" => "success",
+        "message" => "Excuse submitted successfully",
+        "data" => [
+            "excuse_id" => $pdo->lastInsertId(),
+            "student_id" => $student_id,
+            "event_id" => $event_id,
+            "date" => $dateexcuse,
+            "file" => $newName
+        ]
+    ]);
 } catch (Exception $e) {
     http_response_code(400);
-    $response["message"] = $e->getMessage();
+    echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
-
-echo json_encode($response);
