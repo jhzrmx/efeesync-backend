@@ -140,8 +140,10 @@ try {
             $hasContri = !is_null($e["contribution"]);
             $hasAttend = !empty($e["attendance"]);
 
-            if ($filter_type === "attendance") return $hasAttend && !$hasContri;
-            if ($filter_type === "contribution") return $hasContri && !$hasAttend;
+            if ($filter_type === "attendance") return $hasAttend;
+            if ($filter_type === "attendanceonly") return $hasAttend && !$hasContri;
+            if ($filter_type === "contribution") return $hasContri;
+            if ($filter_type === "contributiononly") return $hasContri && !$hasAttend;
             if ($filter_type === "both") return $hasContri && $hasAttend;
             return true;
         });

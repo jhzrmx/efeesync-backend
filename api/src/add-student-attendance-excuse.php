@@ -8,8 +8,6 @@ header("Content-Type: application/json");
 // Require student role
 require_role(["student"]);
 
-// Route: POST /events/:id/date/:date
-
 try {
     // --- Parameters ---
     $event_id   = $id ?? null;

@@ -32,7 +32,7 @@ try {
     $student_id = $student["student_id"];
     $student_section = $student["student_section"];
 
-    // Fetch contributions & classify
+    // Fetch contributions, including partial payments
     $contributions_sql = "
         SELECT 
             e.event_id,
@@ -40,6 +40,7 @@ try {
             ec.event_contri_fee,
             ec.event_contri_due_date,
             IFNULL(SUM(cm.amount_paid), 0) AS total_paid,
+            (ec.event_contri_fee - IFNULL(SUM(cm.amount_paid), 0)) AS remaining_balance,
             CASE
                 WHEN IFNULL(SUM(cm.amount_paid), 0) = 0 THEN 'UNPAID'
                 WHEN IFNULL(SUM(cm.amount_paid), 0) >= ec.event_contri_fee THEN 'PAID'
@@ -54,26 +55,51 @@ try {
         GROUP BY e.event_id, e.event_name, ec.event_contri_fee
     ";
 
-    $attend_stmt = $pdo->prepare($contributions_sql);
-    $attend_stmt->execute([$student_id, $student_section]);
-    $attend_rows = $attend_stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare($contributions_sql);
+    $stmt->execute([$student_id, $student_section]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Separate into paid/unpaid/unsettled
+    // Classify & compute totals
     $paid_events = [];
     $unpaid_events = [];
     $unsettled_events = [];
     $total_fees_paid = 0;
+    $total_fees_unpaid = 0;
+    $total_fees_unsettled = 0;
 
-    foreach ($attend_rows as $row) {
+    foreach ($rows as $row) {
         $status = $row["payment_status"];
-        if ($status === "PAID") {
-            $paid_events[] = $row;
-            $total_fees_paid += $row["total_paid"];
-        } elseif ($status === "UNPAID") {
-            $unpaid_events[] = $row;
-        } elseif ($status === "UNSETTLED") {
-            $unsettled_events[] = $row;
-            $total_fees_paid += $row["total_paid"];
+        $fee = (float)$row["event_contri_fee"];
+        $paid = (float)$row["total_paid"];
+        $balance = (float)$row["remaining_balance"];
+
+        switch ($status) {
+            case "PAID":
+                $paid_events[] = [
+                    ...$row,
+                    "display_amount" => number_format($paid, 2, '.', ''),
+                    "remarks" => "Fully paid"
+                ];
+                $total_fees_paid += $paid;
+                break;
+
+            case "UNPAID":
+                $unpaid_events[] = [
+                    ...$row,
+                    "display_amount" => number_format($fee, 2, '.', ''),
+                    "remarks" => "No payment made"
+                ];
+                $total_fees_unpaid += $fee;
+                break;
+
+            case "UNSETTLED":
+                $unsettled_events[] = [
+                    ...$row,
+                    "display_amount" => number_format($balance, 2, '.', ''),
+                    "remarks" => "Remaining balance"
+                ];
+                $total_fees_unsettled += $balance;
+                break;
         }
     }
 
@@ -82,6 +108,8 @@ try {
         "student_id" => (int)$student_id,
         "data" => [
             "total_fees_paid" => number_format($total_fees_paid, 2, '.', ''),
+            "total_fees_unpaid" => number_format($total_fees_unpaid, 2, '.', ''),
+            "total_fees_unsettled" => number_format($total_fees_unsettled, 2, '.', ''),
             "paid_events" => $paid_events,
             "unpaid_events" => $unpaid_events,
             "unsettled_events" => $unsettled_events

@@ -271,14 +271,26 @@ CREATE TABLE attendance_excuse (
 -- ONLINE PAYMENTS FOR CONTRIBUTIONS AND ATTENDANCE SANCTIONS
 -- ================================
 
--- CREATE TABLE online_payments (
---     online_payment_id INT AUTO_INCREMENT PRIMARY KEY,
---     reference_no VARCHAR(100) NOT NULL, -- GCash/Bank ref
---     method VARCHAR(50) NOT NULL,        -- GCash, Bank Transfer, etc.
---     proof_url TEXT,                     -- optional proof image/file
---     payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
---     status ENUM('PENDING','APPROVED','REJECTED') DEFAULT 'PENDING'
--- );
+CREATE TABLE online_payments (
+    online_payment_id INT AUTO_INCREMENT PRIMARY KEY,
+--  reference_no VARCHAR(100) NOT NULL,             -- GCash/Bank ref
+    method VARCHAR(50) NOT NULL DEFAULT 'GCASH',    -- GCash, Bank Transfer, etc.
+    image_proof VARCHAR(255),                       -- proof image/file
+    payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    student_id INT NOT NULL,
+    status ENUM('PENDING','APPROVED','REJECTED') DEFAULT 'PENDING',
+    FOREIGN KEY (student_id) REFERENCES students(student_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) AUTO_INCREMENT = 1001;
+
+CREATE TABLE online_payment_contributions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    online_payment_id INT NOT NULL,
+    contribution_id INT NOT NULL,
+    FOREIGN KEY (online_payment_id) REFERENCES online_payments(online_payment_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (contribution_id) REFERENCES contributions_made(contribution_id) ON DELETE CASCADE ON UPDATE CASCADE
+) AUTO_INCREMENT = 1001;
+
 -- 
 -- CREATE TABLE online_payment_attendance_sanctions (
 --     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -286,15 +298,7 @@ CREATE TABLE attendance_excuse (
 --     paid_attend_sanction_id INT NOT NULL,
 --     FOREIGN KEY (online_payment_id) REFERENCES online_payments(online_payment_id),
 --     FOREIGN KEY (paid_attend_sanction_id) REFERENCES paid_attendance_sanctions(paid_attend_sanction_id)
--- );
--- 
--- CREATE TABLE online_payment_contributions (
---     id INT AUTO_INCREMENT PRIMARY KEY,
---     online_payment_id INT NOT NULL,
---     contribution_id INT NOT NULL,
---     FOREIGN KEY (online_payment_id) REFERENCES online_payments(online_payment_id),
---     FOREIGN KEY (contribution_id) REFERENCES contributions_made(contribution_id)
--- );
+-- ) AUTO_INCREMENT = 1001;
 
 -- ================================
 -- PROGRAM HISTORY & COMSERV

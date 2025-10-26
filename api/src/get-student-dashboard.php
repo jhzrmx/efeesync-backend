@@ -73,15 +73,74 @@ try {
     foreach ($upcoming_events as &$event) {
         $event_id = $event["event_id"];
 
-        // 1. contribution
-        $contri_sql = "SELECT event_contri_fee 
+        // 1. contribution (nested under "contributions")
+        $contri_sql = "SELECT event_contri_id, event_contri_fee 
                        FROM event_contributions 
                        WHERE event_id = ? 
                        LIMIT 1";
         $cstmt = $pdo->prepare($contri_sql);
         $cstmt->execute([$event_id]);
         $contri = $cstmt->fetch(PDO::FETCH_ASSOC);
-        $event["contribution"] = $contri ? (float)$contri["event_contri_fee"] : null;
+
+        if ($contri) {
+            // initialize contributions object
+            $event["contributions"] = [
+                "event_contri_id"   => (int)$contri["event_contri_id"],
+                "fee"               => (float)$contri["event_contri_fee"],
+                "total_paid"        => 0.00,
+                "remaining_balance" => (float)$contri["event_contri_fee"],
+                "payment_status"    => "UNPAID",
+                "last_paid_at"      => null
+            ];
+
+            // get total paid and last payment timestamp
+            $pay_sql = "
+                SELECT 
+                    IFNULL(SUM(amount_paid), 0) AS total_paid, 
+                    MAX(paid_at) AS last_paid_at
+                FROM contributions_made
+                WHERE event_contri_id = ? 
+                  AND student_id = ? 
+                  AND payment_status = 'APPROVED'
+            ";
+            $pstmt = $pdo->prepare($pay_sql);
+            $pstmt->execute([$contri["event_contri_id"], $student_id]);
+            $pay = $pstmt->fetch(PDO::FETCH_ASSOC);
+
+            $total_paid = (float)$pay["total_paid"];
+            $last_paid_at = $pay["last_paid_at"] ?? null;
+            $remaining = max(0, ((float)$contri["event_contri_fee"] - $total_paid));
+
+            // check if there is any PENDING payment (e.g. online pending)
+            $pending_stmt = $pdo->prepare("
+                SELECT COUNT(*) 
+                FROM contributions_made 
+                WHERE event_contri_id = ? AND student_id = ? AND payment_status = 'PENDING'
+            ");
+            $pending_stmt->execute([$contri["event_contri_id"], $student_id]);
+            $pending_count = (int)$pending_stmt->fetchColumn();
+
+            // determine display status (priority: PAID -> PENDING -> UNSETTLED -> UNPAID)
+            if ($total_paid >= (float)$contri["event_contri_fee"] && $contri["event_contri_fee"] > 0) {
+                $display_status = "PAID";
+            } elseif ($pending_count > 0) {
+                $display_status = "PENDING";
+            } elseif ($total_paid > 0) {
+                $display_status = "UNSETTLED";
+            } else {
+                $display_status = "UNPAID";
+            }
+
+            // set values into the contributions object
+            $event["contributions"]["total_paid"] = round($total_paid, 2);
+            $event["contributions"]["remaining_balance"] = round($remaining, 2);
+            $event["contributions"]["payment_status"] = $display_status;
+            $event["contributions"]["last_paid_at"] = $last_paid_at ? $last_paid_at : null;
+
+        } else {
+            // no contribution for this event
+            $event["contributions"] = null;
+        }
 
         // 2. attendance schedule
         $attend_sql = "SELECT 

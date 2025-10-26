@@ -159,11 +159,18 @@ Route::delete("/events/:id/contributions/number/:student_number_id", "src/delete
 Route::get("/organizations/:id/attendance/excuses", "src/get-organization-attendance-excuse.php");
 Route::get("/organizations/code/:code/attendance/excuses", "src/get-organization-attendance-excuse.php");
 
+// ROUTES: ORGANIZATION ONLINE PAYMENT FOR CONTRIBUTIONS
+Route::get("/organizations/:id/onlinepayments/contributions", "src/get-organization-online-contributions-payment.php");
+Route::get("/organizations/code/:code/onlinepayments/contributions", "src/get-organization-online-contributions-payment.php");
+
 // ROUTES: ORGANIZATION COMMUNITY SERVICES
 Route::get("/organizations/:id/communityservice", "src/get-organization-community-service.php");
 Route::get("/organizations/code/:code/communityservice", "src/get-organization-community-service.php");
 Route::post("/communityservice/events/:event_id/student/:id", "src/add-community-service.php");
 Route::post("/communityservice/events/:event_id/student/number/:student_number_id", "src/add-community-service.php");
+
+// ROUTES: ONLINE CONTRIBUTION PAYMENT REQUEST APPROVE/REJECT
+Route::post("/onlinepayments/:id/contributions/:action", "src/edit-online-contribution-payment-approve-reject.php");
 
 // ROUTES: EXCUSE REQUEST APPROVE/REJECT
 Route::post("/attendance/excuse/:id/:action", "src/edit-attendance-excuse-approve-reject.php");
@@ -193,6 +200,9 @@ Route::get("/students/current/excuses", "src/get-current-student-attendance-excu
 Route::post("/students/current/excuses/event/:id/date/:date", "src/add-student-attendance-excuse.php");
 Route::post("/students/current/excuses/:id", "src/edit-student-attendance-excuse.php");
 Route::delete("/students/current/excuses/:id", "src/delete-student-attendance-excuse.php");
+
+// STUDENT ONLINE CONTRIBUTION PAYMENT
+Route::post("/students/current/onlinepayments/contributions/event/:id", "src/add-student-online-contribution-payment.php");
 
 // STUDENT SECTION
 Route::put("/students/current/section", "src/edit-current-student-section.php");
