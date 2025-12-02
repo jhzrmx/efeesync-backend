@@ -30,6 +30,7 @@ try {
     }
 
     $student_id = $student["student_id"];
+    $department_id = $student['department_id'];
     $student_section = $student["student_section"];
 
     // Fetch contributions, including partial payments
@@ -41,8 +42,10 @@ try {
             ec.event_contri_due_date,
             IFNULL(SUM(cm.amount_paid), 0) AS total_paid,
             (ec.event_contri_fee - IFNULL(SUM(cm.amount_paid), 0)) AS remaining_balance,
+            cm.payment_status AS online_payment_status,
             CASE
                 WHEN IFNULL(SUM(cm.amount_paid), 0) = 0 THEN 'UNPAID'
+                WHEN IFNULL(SUM(cm.amount_paid), 0) >= ec.event_contri_fee AND cm.payment_status != 'APPROVED' THEN 'UNPAID'
                 WHEN IFNULL(SUM(cm.amount_paid), 0) >= ec.event_contri_fee THEN 'PAID'
                 ELSE 'UNSETTLED'
             END AS payment_status
@@ -51,12 +54,16 @@ try {
         LEFT JOIN contributions_made cm 
             ON cm.event_contri_id = ec.event_contri_id 
            AND cm.student_id = ?
+        LEFT JOIN online_payment_contributions opc ON cm.contribution_id = opc.contribution_id
+        JOIN organizations o
+            ON e.organization_id = o.organization_id
+            AND (o.department_id = ? OR o.department_id IS NULL)
         WHERE FIND_IN_SET(LEFT(?, 1), e.event_target_year_levels) > 0
         GROUP BY e.event_id, e.event_name, ec.event_contri_fee
     ";
 
     $stmt = $pdo->prepare($contributions_sql);
-    $stmt->execute([$student_id, $student_section]);
+    $stmt->execute([$student_id, $department_id, $student_section]);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Classify & compute totals
@@ -78,7 +85,7 @@ try {
                 $paid_events[] = [
                     ...$row,
                     "display_amount" => number_format($paid, 2, '.', ''),
-                    "remarks" => "Fully paid"
+                    "online_payment_status" => $row["online_payment_status"]
                 ];
                 $total_fees_paid += $paid;
                 break;
@@ -87,7 +94,7 @@ try {
                 $unpaid_events[] = [
                     ...$row,
                     "display_amount" => number_format($fee, 2, '.', ''),
-                    "remarks" => "No payment made"
+                    "online_payment_status" => $row["online_payment_status"]
                 ];
                 $total_fees_unpaid += $fee;
                 break;
@@ -96,7 +103,7 @@ try {
                 $unsettled_events[] = [
                     ...$row,
                     "display_amount" => number_format($balance, 2, '.', ''),
-                    "remarks" => "Remaining balance"
+                    "online_payment_status" => $row["online_payment_status"]
                 ];
                 $total_fees_unsettled += $balance;
                 break;

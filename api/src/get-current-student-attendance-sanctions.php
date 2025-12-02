@@ -28,6 +28,7 @@ try {
     }
 
     $student_id = $student["student_id"];
+    $department_id = $student['department_id'];
     $student_section = $student["student_section"];
 
     $sanctions = [];
@@ -54,13 +55,16 @@ try {
             ON ae.event_attend_date_id = ead.event_attend_date_id 
            AND ae.student_id = ?
            AND ae.attendance_excuse_status = 'APPROVED'
+        JOIN organizations o
+            ON e.organization_id = o.organization_id
+            AND (o.department_id = ? OR o.department_id IS NULL)
         WHERE FIND_IN_SET(LEFT(?, 1), e.event_target_year_levels) > 0
           AND am.attendance_id IS NULL
           AND ae.attendance_excuse_id IS NULL
         GROUP BY e.event_id, e.event_name, e.event_end_date
     ";
     $attend_stmt = $pdo->prepare($attend_sql);
-    $attend_stmt->execute([$student_id, $student_id, $student_section]);
+    $attend_stmt->execute([$student_id, $student_id, $department_id, $student_section]);
     $attend_rows = $attend_stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Get the total paid

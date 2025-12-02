@@ -37,6 +37,7 @@ try {
 			$stmt_update->bindParam(":new_password", $hashed_password);
 			$stmt_update->bindParam(":current_user_id", $current_user_id);
 			$stmt_update->execute();
+			$response["status"] = "success";
 		} else {
 			$response["message"] = "Wrong password";
 		}
