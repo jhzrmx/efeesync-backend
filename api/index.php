@@ -116,6 +116,8 @@ Route::get("/organizations/:organization_id/financialreport", "src/get-organizat
 Route::get("/organizations/code/:organization_code/financialreport", "src/get-organization-financial-report.php");
 Route::post("/organizations/:organization_id/budget/deduct", "src/add-budget-deduction.php");
 Route::post("/organizations/code/:organization_code/budget/deduct", "src/add-budget-deduction.php");
+Route::put("/organizations/:organization_id/budget/calibrate", "src/edit-organization-budget-calibration.php");
+Route::put("/organizations/code:organization_code/budget/calibrate", "src/edit-organization-budget-calibration.php");
 Route::put("/budget/deduct/:id", "src/edit-budget-deduction.php");
 Route::delete("/budget/deduct/:id", "src/delete-budget-deduction.php");
 
@@ -207,12 +209,6 @@ Route::post("/students/current/onlinepayments/contributions/event/:id", "src/add
 // STUDENT SECTION
 Route::put("/students/current/section", "src/edit-current-student-section.php");
 
-// STUDENT ONLINE PAYMENTS IF LOGGED IN (UNIMPLEMENTED)
-// Route::get("/students/onlinepayments", "src/get-student-online-payments.php");
-// Route::post("/students/onlinepayments", "src/add-student-online-payment.php");
-// Route::post("/students/onlinepayments/edit/:id", "src/edit-student-online-payment.php");
-// Route::delete("/students/onlinepayments", "src/delete-student-online-payment.php");
-
 // ROUTES: DEPARTMENT > STUDENTS
 Route::get("/departments/:department_id/students", "src/get-students.php");
 Route::get("/departments/:department_id/students/search/:search", "src/get-students.php");
@@ -221,9 +217,6 @@ Route::get("/departments/code/:department_code/students/search/:search", "src/ge
 
 // ROUTE: IMPORT CSV
 Route::post("/import/csv", "src/import-students-csv.php"); // form data
-
-// ROUTE: NOTIFICATIONS
-// Route::post("/notifications/:id", "src/notifications-read.php");
 
 // ROUTE: 404
 Route::add404("src/not-found.php");

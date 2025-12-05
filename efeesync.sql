@@ -47,7 +47,7 @@ CREATE TABLE departments (
 
 CREATE TABLE programs (
     program_id INT PRIMARY KEY AUTO_INCREMENT,
-    program_code VARCHAR(10) NOT NULL UNIQUE,
+    program_code VARCHAR(20) NOT NULL UNIQUE,
     program_name VARCHAR(100) NOT NULL UNIQUE,
     department_id INT NOT NULL,
     FOREIGN KEY (department_id) REFERENCES departments(department_id)
