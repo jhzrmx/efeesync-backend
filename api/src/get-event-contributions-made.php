@@ -98,6 +98,13 @@ try {
                         OR u.institutional_email LIKE :search)";
         $params[":search"] = "%" . $_GET["search"] . "%";
     }
+    
+    if (isset($_GET["pid"])) {
+        if (!empty($_GET['pid'])) {
+            $conditions[] = "s.student_current_program = :pid";
+            $params[":pid"] = $_GET["pid"];
+        }
+    }
 
     if (!empty($conditions)) {
         $baseSql .= " AND " . implode(" AND ", $conditions);

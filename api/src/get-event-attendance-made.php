@@ -135,6 +135,15 @@ try {
         $params[":search"] = "%$search%";
     }
 
+    // program_code filter
+    $andProgram = "";
+    if (isset($_GET["pid"])) {
+        if (!empty($_GET['pid'])) {
+            $andProgram = " AND s.student_current_program = :pid";
+            $params[":pid"] = $_GET["pid"];
+        }
+    }
+
     // --- Year level filter ---
     $yearFilter = "";
     if (!empty($event['event_target_year_levels'])) {
@@ -165,7 +174,7 @@ try {
                $dynamicCols
         FROM students s
         JOIN users u ON s.user_id = u.user_id
-        JOIN programs p ON s.student_current_program = p.program_id
+        JOIN programs p ON s.student_current_program = p.program_id $andProgram
         WHERE $isUnivWideSql $yearFilter $whereSearch
         ORDER BY u.last_name, u.first_name
         LIMIT :offset, :per_page

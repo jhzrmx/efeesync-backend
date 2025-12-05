@@ -49,6 +49,13 @@ try {
         $params[":search"] = "%" . $_GET["search"] . "%";
     }
 
+    if (isset($_GET["pid"])) {
+        if (!empty($_GET['pid'])) {
+            $conditions[] = "s.student_current_program = :pid";
+            $params[":pid"] = $_GET["pid"];
+        }
+    }
+
     $whereClause = "WHERE " . implode(" AND ", $conditions);
 
     // ----------------------------

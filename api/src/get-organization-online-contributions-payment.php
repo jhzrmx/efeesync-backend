@@ -63,6 +63,13 @@ try {
         $params[":search"] = "%$search%";
     }
 
+    if (isset($_GET["pid"])) {
+        if (!empty($_GET['pid'])) {
+            $baseSql = " AND s.student_current_program = :pid";
+            $params[":pid"] = $_GET["pid"];
+        }
+    }
+
     // --- Count Total ---
     $countSql = "SELECT COUNT(*) " . $baseSql;
     $countStmt = $pdo->prepare($countSql);

@@ -61,6 +61,14 @@ try {
         $bind[":search"] = "%{$search}%";
     }
 
+    // program id filter
+    if (isset($_GET["pid"])) {
+        if (!empty($_GET['pid'])) {
+            $whereParts[] = "s.student_current_program = :pid";
+            $bind[":pid"] = $_GET["pid"];
+        }
+    }
+
     $whereSql = "WHERE " . implode(" AND ", $whereParts);
 
     //

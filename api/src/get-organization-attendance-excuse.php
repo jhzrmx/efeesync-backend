@@ -53,7 +53,7 @@ try {
                 ON o.organization_id = e.organization_id
             LEFT JOIN departments d 
                 ON d.department_id = o.department_id
-            WHERE (e.organization_id = :organization_id OR o.department_id IS NULL)
+            WHERE (e.organization_id = :organization_id)
                 AND ae.attendance_excuse_proof_file IS NOT NULL
     ";
 
@@ -72,6 +72,14 @@ try {
                         OR u.last_name LIKE :search 
                         OR e.event_name LIKE :search)";
         $params[":search"] = "%$search%";
+    }
+
+    // program_id filter
+    if (isset($_GET["pid"])) {
+        if (!empty($_GET['pid'])) {
+            $baseSql .= " AND s.student_current_program = :pid";
+            $params[":pid"] = $_GET["pid"];
+        }
     }
 
     // total count

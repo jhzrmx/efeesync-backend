@@ -31,8 +31,8 @@ try {
             END AS full_name
         FROM students s
         JOIN users u ON u.user_id = s.user_id
-        JOIN programs p ON p.program_id = s.student_current_program
-        JOIN departments d ON d.department_id = p.department_id";
+        LEFT JOIN programs p ON p.program_id = s.student_current_program
+        LEFT JOIN departments d ON d.department_id = p.department_id";
 
     $conditions = [];
     $params = [];
@@ -69,9 +69,17 @@ try {
                         OR s.student_number_id LIKE :search
                         OR s.student_section LIKE :search
                         OR u.institutional_email LIKE :search
-                        OR p.program_code LIKE :search
+                        -- OR p.program_code LIKE :search
                         OR d.department_code LIKE :search)";
         $params[":search"] = "%".$_GET["search"]."%";
+    }
+
+    // program_id filter
+    if (isset($_GET["pid"])) {
+        if (!empty($_GET['pid'])) {
+            $conditions[] = "s.student_current_program = :pid";
+            $params[":pid"] = $_GET["pid"];
+        }
     }
 
     if (!empty($conditions)) {
