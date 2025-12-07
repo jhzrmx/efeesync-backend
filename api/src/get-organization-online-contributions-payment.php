@@ -65,7 +65,7 @@ try {
 
     if (isset($_GET["pid"])) {
         if (!empty($_GET['pid'])) {
-            $baseSql = " AND s.student_current_program = :pid";
+            $baseSql .= " AND s.student_current_program = :pid";
             $params[":pid"] = $_GET["pid"];
         }
     }

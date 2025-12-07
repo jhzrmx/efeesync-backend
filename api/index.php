@@ -117,7 +117,7 @@ Route::get("/organizations/code/:organization_code/financialreport", "src/get-or
 Route::post("/organizations/:organization_id/budget/deduct", "src/add-budget-deduction.php");
 Route::post("/organizations/code/:organization_code/budget/deduct", "src/add-budget-deduction.php");
 Route::put("/organizations/:organization_id/budget/calibrate", "src/edit-organization-budget-calibration.php");
-Route::put("/organizations/code:organization_code/budget/calibrate", "src/edit-organization-budget-calibration.php");
+Route::put("/organizations/code/:organization_code/budget/calibrate", "src/edit-organization-budget-calibration.php");
 Route::put("/budget/deduct/:id", "src/edit-budget-deduction.php");
 Route::delete("/budget/deduct/:id", "src/delete-budget-deduction.php");
 

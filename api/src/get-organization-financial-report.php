@@ -11,7 +11,7 @@ $response = ["status" => "error"];
 
 try {
     // Get current school year range
-    $sy = get_school_year_range();
+    $sy = get_school_year_range($_GET["sy"] ?? null);
     $syStart = $sy["start"];
     $syEnd   = $sy["end"];
 
@@ -30,6 +30,11 @@ try {
         $id = $stmt->fetchColumn();
         if (!$id) throw new Exception("Organization not found.");
     }
+	
+	// Cash on bank from "budget_initial_calibration"
+	$stmtCashOnBank = $pdo->prepare("SELECT budget_initial_calibration FROM organizations WHERE organization_id = ?");
+    $stmtCashOnBank->execute([$id]);
+    $cash_on_bank = $stmtCashOnBank->fetchColumn();
 
     // --- CASH-IN: Contributions per event ---
     $sqlContri = "
@@ -123,6 +128,7 @@ try {
     $response["status"] = "success";
     $response["data"] = [
         "organization_id" => $id,
+		"cash_on_bank" => intval($cash_on_bank),
         "school_year" => "$syStart - $syEnd",
         "cash_in" => array_values($cashIn),
         "cash_out" => $cashOut,

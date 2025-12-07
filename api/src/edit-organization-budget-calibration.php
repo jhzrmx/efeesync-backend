@@ -27,7 +27,7 @@ try {
     }
 	
 	$calibrated_budget = floatval($json_put_data["new_cash_on_bank"]);
-	$stmt = $pdo->prepare("UPDATE organizations SET budget_initial_alibration = ? WHERE organization_id = ?");
+	$stmt = $pdo->prepare("UPDATE organizations SET budget_initial_calibration = ? WHERE organization_id = ?");
 	$stmt->execute([$calibrated_budget, $organization_id]);
 
 	$response["status"] = "success";
