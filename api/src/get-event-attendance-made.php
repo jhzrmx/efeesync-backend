@@ -80,6 +80,9 @@ try {
         echo json_encode($response);
         exit;
     }
+	
+	$eventDate = $dateRow["event_attend_date"];
+	$isPastEvent = (strtotime($eventDate) < strtotime("today"));
 
     // --- BUILD QUERY ---
     $timeCols = [];
@@ -104,23 +107,27 @@ try {
         $i++;
         $labelParam = ":label_$i";
         $selectCols[] = "
-            CASE
-                WHEN EXISTS (
-                    SELECT 1 FROM attendance_excuse ae
-                    WHERE ae.event_attend_date_id = :date_id
-                      AND ae.student_id = s.student_id
-                      AND ae.attendance_excuse_status = 'APPROVED'
-                ) THEN 'Excused'
-                WHEN EXISTS (
-                    SELECT 1 FROM attendance_made am
-                    JOIN event_attendance_times eat ON eat.event_attend_time_id = am.event_attend_time_id
-                    WHERE eat.event_attend_date_id = :date_id
-                      AND eat.event_attend_time = {$labelParam}
-                      AND am.student_id = s.student_id
-                ) THEN 'Present'
-                ELSE 'Absent'
-            END AS `{$tc['col']}`
-        ";
+			CASE
+				WHEN EXISTS (
+					SELECT 1 FROM attendance_excuse ae
+					WHERE ae.event_attend_date_id = :date_id
+					  AND ae.student_id = s.student_id
+					  AND ae.attendance_excuse_status = 'APPROVED'
+				) THEN 'Excused'
+
+				WHEN EXISTS (
+					SELECT 1 
+					FROM attendance_made am
+					JOIN event_attendance_times eat 
+						ON eat.event_attend_time_id = am.event_attend_time_id
+					WHERE eat.event_attend_date_id = :date_id
+					  AND eat.event_attend_time = {$labelParam}
+					  AND am.student_id = s.student_id
+				) THEN 'Present'
+
+				ELSE " . ($isPastEvent ? "'Absent'" : "'Pending'") . "
+			END AS `{$tc['col']}`
+		";
     }
 
     $dynamicCols = implode(", ", $selectCols);

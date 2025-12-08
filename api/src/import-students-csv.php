@@ -161,7 +161,8 @@ try {
             $stmt->execute([$student_id, $program_id]);
 
             $imported[] = [
-                "student_id" => $student_id,
+                "student_number" => $student_id,
+				"student_number_id" => $student_number_id,
                 "user_id" => $user_id,
                 "generated_email" => $email,
                 "program_code" => $program_code
@@ -171,7 +172,7 @@ try {
             if ($e->getCode() == 23000) {
                 $skipped[] = [
                     "student_number_id" => $student_number_id,
-                    "reason" => "Duplicate student name/email"
+                    "reason" => "Duplicate student id/name/email"
                 ];
             } else {
                 $skipped[] = [

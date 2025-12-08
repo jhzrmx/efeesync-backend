@@ -60,6 +60,7 @@ try {
             AND (o.department_id = ? OR o.department_id IS NULL)
         WHERE FIND_IN_SET(LEFT(?, 1), e.event_target_year_levels) > 0
         GROUP BY e.event_id, e.event_name, ec.event_contri_fee
+		ORDER BY e.event_end_date DESC
     ";
 
     $stmt = $pdo->prepare($contributions_sql);
