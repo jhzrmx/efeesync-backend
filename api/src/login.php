@@ -43,13 +43,13 @@ try {
 	if (!$user) {
 		echo json_encode(["status" => "error", "message" => "User not found"]);
 		exit();
-	} elseif ($user["is_graduated"] == 1) {
-		echo json_encode(["status" => "error", "message" => "This student was already graduated."]);
-		exit();
 	}
 	
 	if (!password_verify($password, $user["password"])) {
 		echo json_encode(["status" => "error", "message" => "Wrong password"]);
+		exit();
+	} elseif ($user["is_graduated"] == 1) {
+		echo json_encode(["status" => "error", "message" => "This student was already graduated."]);
 		exit();
 	}
 
