@@ -133,31 +133,31 @@ try {
 		/* ======================================================
 		   CASE 1: STUDENT EXISTS → UPDATE RECORD
 		====================================================== */
-		$update_names = false;
 		if ($existing) {
 			$student_id = $existing["student_id"];
 			$user_id    = $existing["user_id"];
-
-			/*
-			// Update users (name fields only) [make this optional]
-			$new_email_from_name = generate_email($first_name, $last_name);
-			$stmt = $pdo->prepare("
-				UPDATE users 
-				SET institutional_email=?, first_name=?, last_name=?, middle_initial=?
-				WHERE user_id=?
-			");
-			$stmt->execute([$new_email_from_name, $first_name, $last_name, $middle_initial, $user_id]);
-			*/
-
+			
 			// Update students
-			$stmt = $pdo->prepare("
-				UPDATE students
-				SET student_current_program = ?, 
-					student_section = ?, 
-					is_graduated = ?
-				WHERE student_id = ?
-			");
-			$stmt->execute([$program_id, $student_section, $is_graduated, $student_id]);
+			$updateFields = [];
+			$params = [];
+
+			if ($student_section) {
+				$updateFields[] = "student_section=?";
+				$params[] = $student_section;
+			}
+			if ($program_id) {
+				$updateFields[] = "student_current_program=?";
+				$params[] = $program_id;
+			}
+			if ($is_graduated !== null) {
+				$updateFields[] = "is_graduated=?";
+				$params[] = $is_graduated;
+			}
+
+			$params[] = $student_id;
+			$sql = "UPDATE students SET " . implode(", ", $updateFields) . " WHERE student_id=?";
+			$stmt = $pdo->prepare($sql);
+			$stmt->execute($params);
 
 			$changedFields = [];
 
@@ -194,21 +194,31 @@ try {
         $email = generate_email($first_name, $last_name);
         $password_raw = "cbsua-" . $student_number_id;
         $password_hash = password_hash($password_raw, PASSWORD_BCRYPT);
-
+		
+		// Role ID 102 = student
         $stmt = $pdo->prepare("
-            INSERT INTO users (first_name, last_name, middle_initial, institutional_email, password_hash, role_id)
-            VALUES (?, ?, ?, ?, ?, 3)
+            INSERT INTO users (first_name, last_name, middle_initial, institutional_email, password, role_id)
+            VALUES (?, ?, ?, ?, ?, 102)
         ");
         $stmt->execute([$first_name, $last_name, $middle_initial, $email, $password_hash]);
-
+		
         $user_id = $pdo->lastInsertId();
 
-        /* Insert student */
+        // Insert into students
         $stmt = $pdo->prepare("
             INSERT INTO students (user_id, student_number_id, student_current_program, student_section, is_graduated)
             VALUES (?, ?, ?, ?, ?)
         ");
         $stmt->execute([$user_id, $student_number_id, $program_id, $student_section, $is_graduated]);
+		
+		$student_id = $pdo->lastInsertId();
+		
+		// Insert into student_programs_taken
+		$stmt = $pdo->prepare("
+			INSERT INTO student_programs_taken (student_id, program_id, start_date) 
+			VALUES (?, ?, CURDATE())
+		");
+		$stmt->execute([$student_id, $program_id]);
 
         $imported[] = [
             "student_number_id" => $student_number_id,
