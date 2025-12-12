@@ -46,7 +46,7 @@ try {
             IFNULL(SUM(cm.amount_paid), 0) AS total_paid,
             (ec.event_contri_fee - IFNULL(SUM(cm.amount_paid), 0)) AS remaining_balance
         FROM students s
-        JOIN users u ON u.user_id = s.user_id
+        JOIN users u ON u.user_id = s.user_id AND s.is_graduated = 0
         JOIN programs pr ON pr.program_id = s.student_current_program
         JOIN event_contributions ec ON ec.event_id = :event_id
         LEFT JOIN contributions_made cm 

@@ -43,7 +43,7 @@ try {
         JOIN contributions_made cm ON cm.contribution_id = opc.contribution_id
         JOIN event_contributions ec ON ec.event_contri_id = cm.event_contri_id
         JOIN events e ON e.event_id = ec.event_id
-        JOIN students s ON s.student_id = cm.student_id
+        JOIN students s ON s.student_id = cm.student_id AND s.is_graduated = 0
         JOIN users u ON u.user_id = s.user_id
         JOIN programs p ON p.program_id = s.student_current_program
         JOIN organizations o ON o.organization_id = e.organization_id

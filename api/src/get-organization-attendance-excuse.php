@@ -42,7 +42,7 @@ try {
     $baseSql = "
             FROM attendance_excuse ae
             INNER JOIN students s 
-                ON s.student_id = ae.student_id 
+                ON s.student_id = ae.student_id AND s.is_graduated = 0
             INNER JOIN users u 
                 ON s.user_id = u.user_id
             INNER JOIN event_attendance_dates ed 

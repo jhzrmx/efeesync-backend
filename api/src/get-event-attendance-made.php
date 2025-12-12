@@ -180,7 +180,7 @@ try {
                s.student_number_id,
                $dynamicCols
         FROM students s
-        JOIN users u ON s.user_id = u.user_id
+        JOIN users u ON s.user_id = u.user_id AND s.is_graduated = 0
         JOIN programs p ON s.student_current_program = p.program_id $andProgram
         WHERE $isUnivWideSql $yearFilter $whereSearch
         ORDER BY u.last_name, u.first_name

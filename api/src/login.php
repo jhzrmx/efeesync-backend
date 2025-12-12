@@ -30,8 +30,9 @@ $requestedRole = isset($data["role"]) ? strtolower(trim($data["role"])) : null;
 try {
 	// Check user
 	$stmt = $pdo->prepare("
-		SELECT u.user_id, u.password, r.role_name, u.role_id
+		SELECT s.is_graduated, u.user_id, u.password, r.role_name, u.role_id
 		FROM users u
+		LEFT JOIN students s ON s.user_id = u.user_id
 		JOIN roles r ON u.role_id = r.role_id
 		WHERE u.institutional_email = :email
 		LIMIT 1
@@ -41,6 +42,9 @@ try {
 
 	if (!$user) {
 		echo json_encode(["status" => "error", "message" => "User not found"]);
+		exit();
+	} elseif ($user["is_graduated"] == 1) {
+		echo json_encode(["status" => "error", "message" => "This student was already graduated."]);
 		exit();
 	}
 	

@@ -80,7 +80,7 @@ try {
         FROM students s
         INNER JOIN programs p ON s.student_current_program = p.program_id
         INNER JOIN departments d ON p.department_id = d.department_id
-        JOIN users u ON s.user_id = u.user_id
+        JOIN users u ON s.user_id = u.user_id AND s.is_graduated = 0
         $where
         ORDER BY full_name
     ";
@@ -130,6 +130,7 @@ try {
             ON cm.event_contri_id = ec.event_contri_id 
            AND cm.student_id = s.student_id
         WHERE s.student_id IN (" . implode(",", $student_ids) . ")
+		  AND s.is_graduated = 0
           AND FIND_IN_SET(LEFT(s.student_section, 1), e.event_target_year_levels) > 0
           AND e.organization_id = $organization_id
         GROUP BY s.student_id, e.event_id
@@ -165,6 +166,7 @@ try {
             AND ae.student_id = s.student_id
             AND ae.attendance_excuse_status = 'APPROVED'
         WHERE s.student_id IN (" . implode(",", $student_ids) . ")
+		  AND s.is_graduated = 0
           AND FIND_IN_SET(LEFT(s.student_section, 1), e.event_target_year_levels) > 0
         GROUP BY s.student_id, e.event_id
         HAVING total_due > 0
@@ -178,7 +180,7 @@ try {
         SELECT student_id, event_id, SUM(amount_paid) AS total_paid
         FROM paid_attendance_sanctions
         WHERE payment_status = 'APPROVED'
-          AND student_id IN (" . implode(",", $student_ids) . ")
+          AND student_id IN (" . implode(",", $student_ids) . ") AND s.is_graduated = 0
         GROUP BY student_id, event_id
     ";
     $paid_map = [];

@@ -82,6 +82,13 @@ try {
             $params[":pid"] = $_GET["pid"];
         }
     }
+	
+	// graduate filter
+    if (isset($_GET["graduated"])) {
+        if ($_GET['graduated'] == "yes") {
+            $conditions[] = "s.is_graduated = 1";
+        }
+    }
 
     if (!empty($conditions)) {
         $baseSql .= " WHERE " . implode(" AND ", $conditions);

@@ -97,7 +97,7 @@ try {
                 SUM(CASE WHEN am.attendance_id IS NULL AND ae.attendance_excuse_id IS NULL THEN 1 ELSE 0 END) AS absences_count,
                 MAX(csm.comserv_id) AS comserv_id
             FROM students s
-            JOIN users u ON s.user_id = u.user_id
+            JOIN users u ON s.user_id = u.user_id AND s.is_graduated = 0
             LEFT JOIN programs p ON s.student_current_program = p.program_id
 
             -- events belonging to this organization that require comserv and already ended
