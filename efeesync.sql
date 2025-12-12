@@ -107,6 +107,7 @@ CREATE TABLE students (
     user_id INT NOT NULL,
     student_section VARCHAR(3) NOT NULL,
     student_current_program INT NULL,
+	is_graduated BOOLEAN NOT NULL DEFAULT FALSE,
     last_active DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
         ON DELETE CASCADE ON UPDATE CASCADE,

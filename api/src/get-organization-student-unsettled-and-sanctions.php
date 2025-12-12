@@ -56,6 +56,11 @@ try {
         $conditions[] = "s.student_current_program = :pid";
         $params[":pid"] = $_GET["pid"];
     }
+	
+	if (!empty($_GET["student_number"])) {
+        $conditions[] = "s.student_number_id = :student_number";
+        $params[":student_number"] = $_GET["student_number"];
+    }
 
     $where = "WHERE " . implode(" AND ", $conditions);
 

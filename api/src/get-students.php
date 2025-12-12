@@ -14,6 +14,7 @@ try {
             s.student_number_id, 
             s.student_section, 
             s.last_active,
+			s.is_graduated,
             u.user_id, 
             u.institutional_email, 
             u.first_name, 

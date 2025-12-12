@@ -5,81 +5,107 @@ require_once "_middleware.php";
 require_once "_request.php";
 
 header("Content-Type: application/json");
-
 require_role(["admin", "treasurer"]);
 
 $json = json_request_body();
 
-$response = ["status" => "error"];
-
 try {
-	$student_id = isset($id) ? $id : null;
-	if (!$student_id) throw new Exception("Missing student ID");
-	// Get current student and user_id
-	$stmt = $pdo->prepare("SELECT * FROM students WHERE student_id = ?");
-	$stmt->execute([$student_id]);
-	$student = $stmt->fetch(PDO::FETCH_ASSOC);
+    $student_id = isset($id) ? $id : null;
+    if (!$student_id) throw new Exception("Missing student ID");
 
-	if (!$student) {
-		http_response_code(404);
-		echo json_encode(["status" => "error", "message" => "Student not found"]);
-		exit();
-	}
+    // Get current student and user info
+    $stmt = $pdo->prepare("
+        SELECT s.*, u.user_id, u.institutional_email 
+        FROM students s
+        JOIN users u ON u.user_id = s.user_id
+        WHERE s.student_id = ?
+    ");
+    $stmt->execute([$student_id]);
+    $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
-	$user_id = $student["user_id"];
+    if (!$student) {
+        http_response_code(404);
+        echo json_encode(["status" => "error", "message" => "Student not found"]);
+        exit();
+    }
 
-	$student_number_id = $json["student_number_id"] ?? null;
-	$first_name = $json["first_name"] ?? null;
-	$last_name = $json["last_name"] ?? null;
-	$mid = $json["middle_initial"] ?? null;
-	$sec = $json["student_section"] ?? null;
-	$prog = $json["student_current_program"] ?? null;
+    $user_id = $student["user_id"];
 
-	$pdo->beginTransaction();
+    // Normalize incoming data
+    $student_number_id = $json["student_number_id"] ?? null;
+    $first_name        = $json["first_name"] ?? null;
+    $last_name         = $json["last_name"] ?? null;
+    $mid               = $json["middle_initial"] ?? null;
+    $sec               = $json["student_section"] ?? null;
+    $prog              = $json["student_current_program"] ?? null;
 
-	// Update users table
-	if ($first_name && $last_name) {
-		$email = generate_email($first_name, $last_name);
+    $is_graduated = null;
+    if (isset($json["is_graduated"])) {
+        $is_graduated = in_array(strtolower($json["is_graduated"]), ["1","yes","true"]) ? 1 : 0;
+    }
 
-		// Check if new email already exists (and not from this user)
-		$stmt = $pdo->prepare("SELECT user_id FROM users WHERE institutional_email = ? AND user_id != ?");
-		$stmt->execute([$email, $user_id]);
+    $pdo->beginTransaction();
 
-		if ($stmt->rowCount() > 0) {
-			echo json_encode(["status" => "error", "message" => "Email already exists: $email"]);
-			exit();
-		}
+    // Update users table if name fields provided
+    if ($first_name && $last_name) {
+        $new_email = generate_email($first_name, $last_name);
 
-		$stmt = $pdo->prepare("UPDATE users SET first_name=?, last_name=?, middle_initial=?, institutional_email=? WHERE user_id=?");
-		$stmt->execute([$first_name, $last_name, $mid, $email, $user_id]);
-	}
+        // Ensure email is unique (excluding this user)
+        $stmt = $pdo->prepare("SELECT user_id FROM users WHERE institutional_email = ? AND user_id != ?");
+        $stmt->execute([$new_email, $user_id]);
 
-	// Update student record
-	if ($sec) {
-		$stmt = $pdo->prepare("UPDATE students SET student_number_id=?, student_section=? WHERE student_id=?");
-		$stmt->execute([$student_number_id, $sec, $student_id]);
-	}
-	if ($prog) {
-		$stmt = $pdo->prepare("UPDATE students SET student_current_program=? WHERE student_id=?");
-		$stmt->execute([$prog, $student_id]);
-	}
+        if ($stmt->rowCount() > 0) {
+            throw new Exception("Email already exists: $new_email");
+        }
 
-	// Update program history
-	/*if ($prog) {
-		$stmt = $pdo->prepare("UPDATE student_programs_taken SET program_id = ? WHERE student_id = ?");
-		$stmt->execute([$prog, $student_id]);
-	}*/
+        $stmt = $pdo->prepare("
+            UPDATE users 
+            SET first_name=?, last_name=?, middle_initial=?, institutional_email=? 
+            WHERE user_id=?
+        ");
+        $stmt->execute([$first_name, $last_name, $mid, $new_email, $user_id]);
+    } else {
+        $new_email = $student["institutional_email"]; // unchanged
+    }
 
-	$pdo->commit();
+    // Prepare student update dynamically
+    $updateFields = [];
+    $params = [];
 
-	echo json_encode([
-		"status" => "success",
-		"updated_student_id" => $student_id,
-		"new_email" => isset($email) ? $email : "unchanged"
-	]);
+    if ($student_number_id) {
+        $updateFields[] = "student_number_id=?";
+        $params[] = $student_number_id;
+    }
+    if ($sec) {
+        $updateFields[] = "student_section=?";
+        $params[] = $sec;
+    }
+    if ($prog) {
+        $updateFields[] = "student_current_program=?";
+        $params[] = $prog;
+    }
+    if ($is_graduated !== null) {
+        $updateFields[] = "is_graduated=?";
+        $params[] = $is_graduated;
+    }
+
+    if ($updateFields) {
+        $params[] = $student_id;
+        $sql = "UPDATE students SET " . implode(", ", $updateFields) . " WHERE student_id=?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+    }
+
+    $pdo->commit();
+
+    echo json_encode([
+        "status" => "success",
+        "updated_student_id" => $student_id,
+        "new_email" => $new_email
+    ]);
 
 } catch (Exception $e) {
-	$pdo->rollBack();
-	http_response_code(500);
-	echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+    $pdo->rollBack();
+    http_response_code(500);
+    echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }
